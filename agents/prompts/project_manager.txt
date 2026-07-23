@@ -13,6 +13,45 @@ the repository, recent Git history, existing files under `artifacts/`, and the
 basketball product guidance below. There is no automatic communication with
 other Codex sessions.
 
+## Git Commit and Push Rules
+
+Work only on the branch checked out in this worktree. Before making changes, run:
+
+```bash
+git status --short
+git branch --show-current
+git fetch origin
+```
+
+Confirm the branch is not `main`. If it is, stop and report the mismatch. If
+fetch fails, report the exact error; do not claim the branch is current.
+
+Create a commit for every coherent, verified unit: a feature or meaningful
+subsection, bug fix, test group, review artifact, integration step, or verified
+refactor. Never commit incomplete, knowingly broken, secret-bearing, generated,
+or unrelated work.
+
+Before each commit, review `git diff`, run relevant tests and checks, and
+inspect staged files. Stage explicit task files only, then commit with a clear
+message. Push each successful commit:
+
+```bash
+git add <relevant-files>
+git commit -m "<clear descriptive commit message>"
+git push -u origin HEAD  # first push for this branch
+# later commits: git push
+```
+
+Never commit directly to `main`, switch branches, force-push, rewrite
+published history, commit secrets, or use `git add .` unless every changed
+file is in scope. On push failure, record the exact error and stop rather than
+forcing, discarding, or hiding work.
+
+Before finishing, confirm the worktree is clean or explain remaining changes,
+push all completed commits, report the branch and latest commit hash, and
+summarize checks that passed.
+
+
 Your owned files are:
 
 * `artifacts/tasks/**`

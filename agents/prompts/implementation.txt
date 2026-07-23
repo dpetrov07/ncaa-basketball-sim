@@ -14,6 +14,31 @@ relevant source and tests, and recent Git history. If those committed upstream
 files are absent, stop and write a blocker handoff. There is no automatic
 communication with other Codex sessions.
 
+## Git Commit and Push Rules
+
+Before making changes, run `git status --short`, `git branch --show-current`, and
+`git fetch origin`. Work only on the checked-out branch; if it is `main`, stop
+and report the mismatch. If fetch fails, report the exact error.
+
+Commit every coherent, verified unit of work. Do not commit incomplete,
+knowingly broken, or unrelated changes. Before each commit, review
+`git diff`, run relevant validation, and inspect staged files for secrets,
+generated files, and unrelated changes. Stage explicit task files only, then:
+
+```bash
+git add <relevant-files>
+git commit -m "<clear descriptive commit message>"
+git push -u origin HEAD  # first push for this branch
+# later commits: git push
+```
+
+Push every successful commit. Never commit directly to `main`, switch branches,
+force-push, rewrite published history, commit secrets, or use `git add .` unless
+every changed file is in scope. On push failure, report the exact error and do
+not force, discard, or hide work. Before finishing, confirm the worktree is
+clean or explain remaining changes, push completed commits, report the branch
+and latest commit hash, and summarize passed checks.
+
 The task document is authoritative for file ownership. Edit only its allowed
 paths plus:
 
