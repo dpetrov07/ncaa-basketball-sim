@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manage local Git worktrees for the five manual Codex agent sessions."""
+"""Manage local Git worktrees for the two manual Codex sessions."""
 
 from __future__ import annotations
 
@@ -16,15 +16,22 @@ class Agent:
     name: str
     branch: str
     prompt: str
-    handoff: str
+    output: str
 
 
 AGENTS = (
-    Agent("project-manager", "agent/project-manager", "project_manager.txt", "project-manager.md"),
-    Agent("implementation", "agent/implementation", "implementation.txt", "implementation.md"),
-    Agent("testing", "agent/testing", "testing.txt", "testing.md"),
-    Agent("review", "agent/review", "review.txt", "review.md"),
-    Agent("integration", "agent/integration", "integration.txt", "integration.md"),
+    Agent(
+        "implementation",
+        "agent/implementation",
+        "implementation.md",
+        "artifacts/handoffs/implementation.md",
+    ),
+    Agent(
+        "review",
+        "agent/review",
+        "review.md",
+        "artifacts/reviews/review.md",
+    ),
 )
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -63,8 +70,8 @@ def prompt_path(base: Path, agent: Agent) -> Path:
     return base / "agents" / "prompts" / agent.prompt
 
 
-def handoff_path(base: Path, agent: Agent) -> Path:
-    return base / "artifacts" / "handoffs" / agent.handoff
+def output_path(base: Path, agent: Agent) -> Path:
+    return base / agent.output
 
 
 def branch_exists(branch: str) -> bool:
@@ -180,11 +187,11 @@ def status() -> int:
             tree_state = branch
             dirty_state = "dirty" if dirty_paths(path) else "clean"
         prompt_state = "readable" if prompt_path(root, agent).is_file() else "missing"
-        handoff_state = "present" if handoff_path(path if branch else root, agent).is_file() else "missing"
+        output_state = "present" if output_path(path if branch else root, agent).is_file() else "missing"
         print(
             f"{agent.name:15} branch={branch_state:7} "
             f"worktree={tree_state:25} state={dirty_state:5} "
-            f"prompt={prompt_state:8} handoff={handoff_state}"
+            f"prompt={prompt_state:8} output={output_state}"
         )
     return 0
 
@@ -198,7 +205,7 @@ def instructions() -> int:
         print(f"  code {path}")
         print(f"  prompt: {prompt}")
         print(f"  branch: {agent.branch}")
-    print("\nRun project-manager first; integration is always last.")
+    print("\nRun implementation first; run review after implementation is committed.")
     return 0
 
 
@@ -222,7 +229,7 @@ def open_worktrees() -> int:
     return 0
 
 
-def validate(require_handoffs: bool) -> int:
+def validate(require_outputs: bool) -> int:
     root = repo_root()
     errors = ensure_prompts_readable(root)
     known = worktrees()
@@ -232,11 +239,11 @@ def validate(require_handoffs: bool) -> int:
         branch = known.get(path.resolve())
         if branch is not None and branch != agent.branch:
             errors.append(f"{path} uses {branch}, expected {agent.branch}")
-        if require_handoffs:
+        if require_outputs:
             base = path if branch is not None else root
-            handoff = handoff_path(base, agent)
-            if not handoff.is_file():
-                errors.append(f"missing handoff for {agent.name}: {handoff}")
+            output = output_path(base, agent)
+            if not output.is_file():
+                errors.append(f"missing output for {agent.name}: {output}")
 
     if errors:
         print("Validation failed:")
@@ -283,9 +290,14 @@ def parser() -> argparse.ArgumentParser:
     subparsers.add_parser("instructions", help="print VS Code and prompt paths")
     subparsers.add_parser("open", help="open all existing worktrees in VS Code")
     validate_parser = subparsers.add_parser(
-        "validate", help="validate prompt, worktree, and optional handoff mappings"
+        "validate", help="validate prompt, worktree, and optional output mappings"
     )
-    validate_parser.add_argument("--require-handoffs", action="store_true")
+    validate_parser.add_argument(
+        "--require-outputs",
+        "--require-handoffs",
+        dest="require_outputs",
+        action="store_true",
+    )
     cleanup_parser = subparsers.add_parser("cleanup", help="remove clean worktrees, never branches")
     cleanup_parser.add_argument("--dry-run", action="store_true")
     return result
@@ -303,7 +315,7 @@ def main() -> int:
         if args.command == "open":
             return open_worktrees()
         if args.command == "validate":
-            return validate(args.require_handoffs)
+            return validate(args.require_outputs)
         if args.command == "cleanup":
             return cleanup(args.dry_run)
     except (WorkspaceError, subprocess.CalledProcessError) as exc:
