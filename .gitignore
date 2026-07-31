@@ -1,8 +1,5 @@
-.env
-.venv/
-.local/
-__pycache__/
-*.py[cod]
 node_modules/
 dist/
+*.local
+.DS_Store
 coverage/
