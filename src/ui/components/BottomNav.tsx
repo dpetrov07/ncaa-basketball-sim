@@ -1,10 +1,11 @@
-import { ClipboardList, Home, LayoutGrid, Users } from "lucide-react";
+import { CalendarDays, ClipboardList, Home, LayoutGrid, Users } from "lucide-react";
 
-export type MainView = "home" | "roster" | "lineup" | "gameplan";
+export type MainView = "home" | "season" | "roster" | "lineup" | "gameplan";
 
 export function BottomNav({ active, onNavigate }: { active: MainView; onNavigate: (view: MainView) => void }) {
   const items = [
     { id: "home" as const, label: "Home", Icon: Home },
+    { id: "season" as const, label: "Season", Icon: CalendarDays },
     { id: "roster" as const, label: "Roster", Icon: Users },
     { id: "lineup" as const, label: "Lineup", Icon: LayoutGrid },
     { id: "gameplan" as const, label: "Plan", Icon: ClipboardList },

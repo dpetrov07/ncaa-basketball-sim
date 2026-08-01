@@ -140,6 +140,7 @@ export const teams: Team[] = teamSeeds.map(([name, city, shortName, nickname, pr
   nickname,
   shortName,
   city,
+  conference: ["North", "North", "North", "North", "North", "South", "South", "South", "South", "South", "East", "East", "East", "East", "East", "West", "West", "West", "West", "West"][teamIndex],
   colors: [primary, secondary],
   logo: shortName.slice(0, 1),
   coach: makeCoach(teamIndex),

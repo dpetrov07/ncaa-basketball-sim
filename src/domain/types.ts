@@ -99,6 +99,7 @@ export interface Team {
   nickname: string;
   shortName: string;
   city: string;
+  conference: string;
   colors: [string, string];
   logo: string;
   coach: Coach;
@@ -256,4 +257,70 @@ export interface SimulationInput {
   homeStrategy: Strategy;
   awayStrategy: Strategy;
   seed: number;
+}
+
+export type ScheduledGameStatus = "scheduled" | "completed";
+
+export interface ScheduledGame {
+  id: string;
+  seasonYear: number;
+  day: number;
+  homeTeamId: string;
+  awayTeamId: string;
+  conferenceGame: boolean;
+  seed: number;
+  status: ScheduledGameStatus;
+  result?: GameResult;
+}
+
+export interface TeamSeasonRecord {
+  teamId: string;
+  wins: number;
+  losses: number;
+  conferenceWins: number;
+  conferenceLosses: number;
+  pointsFor: number;
+  pointsAgainst: number;
+  streak: number;
+}
+
+export interface SeasonPlayerStats {
+  playerId: string;
+  gamesPlayed: number;
+  gamesStarted: number;
+  minutes: number;
+  points: number;
+  rebounds: number;
+  assists: number;
+  steals: number;
+  blocks: number;
+  turnovers: number;
+  fouls: number;
+  fgm: number;
+  fga: number;
+  twoPm: number;
+  twoPa: number;
+  threePm: number;
+  threePa: number;
+  ftm: number;
+  fta: number;
+  plusMinus: number;
+  seasonHighPoints: number;
+  recentPoints: number[];
+}
+
+export interface SeasonState {
+  schemaVersion: 1;
+  seasonYear: number;
+  seed: number;
+  currentDay: number;
+  totalDays: number;
+  userTeamId: string;
+  userLineup: string[];
+  userStrategy: Strategy;
+  teams: Team[];
+  schedule: ScheduledGame[];
+  records: Record<string, TeamSeasonRecord>;
+  playerStats: Record<string, SeasonPlayerStats>;
+  history: string[];
 }

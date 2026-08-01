@@ -1,850 +1,201 @@
-You are the lead game developer and systems designer for a mobile-first college basketball coaching simulation game.
+# Courtside Development Guide
 
-Your goal is to build a playable first version of a fictional college basketball coaching simulator centered around roster management, strategy, substitutions, player development, and a numbers-based live game simulation.
+Courtside is a mobile-first fictional college basketball coaching and dynasty game. The user manages a program, builds lineups, sets strategy, simulates games through structured basketball events, and eventually guides the program through seasons, recruiting, development, and roster movement.
 
-This is not a 2D or 3D basketball game. Do not build animated players moving around a court. Games should be simulated through structured basketball events, statistics, probabilities, and readable play-by-play text.
+This is a sports-management simulation, not a 2D or 3D basketball game. Do not build animated players on a court. Games are represented by deterministic events, statistics, probabilities, readable play-by-play, and coaching decisions.
 
-The experience should feel like a mobile sports-management game where the player controls a college basketball program, prepares for opponents, manages rotations, chooses strategies, and watches those decisions influence simulated games.
+## Current product state
 
-## Primary Goal
+The first playable vertical slice is complete and working.
 
-Build a functional vertical slice that allows the user to:
+### Simulation foundation
 
-1. Select one college basketball program.
-2. View its roster and player ratings.
-3. Configure a starting lineup and rotation.
-4. Choose a coaching game plan.
-5. Simulate a complete basketball game.
-6. Watch text-based play-by-play events appear during the simulation.
-7. Make substitutions and basic strategic changes.
-8. View a complete player and team box score after the game.
+Implemented in `src/simulation/`:
 
-Focus first on creating a strong simulation foundation rather than building every dynasty feature immediately.
+- Seeded random-number generation with no `Math.random()` in simulation code.
+- Possession-by-possession games with two 20-minute halves and overtime.
+- Layups, dunks, mid-range shots, post shots, three-pointers, misses, blocks, rebounds, assists, turnovers, steals, fouls, free throws, offensive fouls, and second chances.
+- Running clock, possessions, fatigue, fouls, player minutes, substitutions, confidence, plus-minus, player statistics, team statistics, and structured play-by-play events.
+- Lineup validation and automatic fatigue/foul-trouble substitutions.
+- Strategy effects for pace, offensive identity, shot emphasis, defensive scheme, pressure, help defense, rebounding aggression, and rotation size.
+- Deterministic overtime tie resolution so every game terminates.
 
-## Mobile-First Design
+Simulation logic must remain independent of React and browser APIs. Structured events are the source of truth; text commentary is a presentation layer.
 
-The game should be designed primarily for mobile devices.
+### Data and domain models
 
-The interface should:
+Implemented in `src/domain/` and `src/data/`:
 
-* Work well on narrow phone screens.
-* Use large, clear touch controls.
-* Avoid dense desktop-style tables where possible.
-* Use horizontally scrollable stat sections when necessary.
-* Present players as compact roster rows or cards.
-* Keep important game information visible without excessive scrolling.
-* Make lineup changes, substitutions, and strategy adjustments easy with taps.
-* Feel like a sports-management game rather than a generic business dashboard.
+- Explicit TypeScript contracts for players, ratings, mutable game state, teams, coaches, lineups, strategies, events, box scores, and game results.
+- Twenty fictional teams with thirteen players each.
+- Player overall ratings derived from individual ratings, position, and archetype.
+- Position, class year, height, weight, archetype, personality, potential, hidden traits, stamina, and basketball skill ratings.
+- Fictional coaches with coaching attributes and styles.
+- Team names, nicknames, abbreviations, colors, and lettermark logos.
 
-The application can also support desktop screens, but mobile usability is the priority.
+Permanent player data must remain separate from mutable in-game state. Do not permanently change player ratings during one game.
 
-## Game Simulation System
+### Frontend experience
 
-Create a deterministic, possession-based basketball simulation engine.
+Implemented in `src/ui/`:
 
-Do not generate a final score directly from team overall ratings. Simulate the game possession by possession and calculate the score from actual basketball events.
+- Program Home.
+- Roster and player profile view.
+- Lineup and rotation management.
+- Game Plan configuration.
+- Pregame matchup screen.
+- Live simulation screen with play controls, score, clock, recent action, lineups, fatigue estimates, fouls, and key statistics.
+- Final box score.
+- Compact mobile bottom navigation and deeper-screen back actions.
+- Responsive mobile and desktop layouts.
+- Deterministic layered SVG portraits derived from player IDs. The same player must always receive the same portrait.
+- Restrained sports-editorial visual system: neutral surfaces, thin dividers, compact typography, and team colors used as accents.
+- Season hub with team schedule, next-game actions, conference standings, record summary, and season scoring leaders.
 
-A game should contain:
+Visible controls must either affect the underlying simulation or navigate to the real screen where that decision is made. Avoid fake controls and placeholder panels.
 
-* Two 20-minute halves.
-* A running game clock.
-* Possessions.
-* Team fouls.
-* Player fouls.
-* Timeouts.
-* Substitutions.
-* Halftime.
-* Late-game strategy.
-* Overtime when the score is tied.
+### Season foundation
 
-The same teams, strategies, lineups, and random seed should always produce the same result.
+Implemented in `src/season/`:
 
-All randomness must come from an injected seeded random-number generator. Do not use uncontrolled randomness inside the simulation.
+- Deterministic conference and non-conference schedule generation for all teams.
+- Home/away scheduled games with reproducible seeds and conflict-free calendar dates.
+- Completed/upcoming game state, team records, conference records, point differential, streaks, standings, and season leaders.
+- AI-versus-AI simulation for advancing one day or advancing to the user's next scheduled game.
+- Season player totals derived directly from completed box scores.
+- Game history references and completed results stored on scheduled games.
+- Versioned local-storage persistence with safe loading, autosave after meaningful actions, and new-save reset behavior.
+- User lineup and strategy preferences included in the saved season state.
 
-## Possession Flow
+This is the first season/dynasty milestone. The live screen still replays a completed game result; it is not yet a resumable possession state with mid-game decisions.
 
-Each possession should follow a structured process:
-
-1. Determine which team has possession.
-2. Validate that both teams have five active players.
-3. Determine possession length based on pace and game situation.
-4. Select the offensive action.
-5. Select the primary offensive player.
-6. Determine which teammates and defenders are involved.
-7. Apply lineup, matchup, fatigue, chemistry, strategy, and coaching effects.
-8. Resolve whether the possession produces:
-
-   * A shot attempt.
-   * A turnover.
-   * A foul.
-   * A timeout or tactical decision opportunity.
-9. Resolve the outcome.
-10. Update the score, clock, fatigue, fouls, possession, and statistics.
-11. Emit structured game events.
-12. Convert those structured events into readable play-by-play text.
-
-The engine should produce machine-readable events first. The text commentary should be generated from those events rather than being the source of the basketball logic.
-
-## Offensive Events
-
-Support these scoring and offensive outcomes:
-
-* Layups.
-* Dunks.
-* Other shots at the rim.
-* Mid-range jump shots.
-* Post shots.
-* Three-point shots.
-* Free throws.
-* Offensive rebounds.
-* Assists.
-* Turnovers.
-* Bad passes.
-* Lost-ball turnovers.
-* Offensive fouls.
-* Shot-clock violations.
-* Fast-break opportunities.
-* Second-chance possessions.
-
-Shot results should depend on the shooter, shot type, defender, offensive action, spacing, fatigue, confidence, chemistry, and coaching strategy.
-
-A made basket should award the correct number of points:
-
-* Two points for layups, dunks, post shots, and mid-range shots.
-* Three points for three-point shots.
-* One point for free throws.
-
-## Defensive Events
-
-Support defensive outcomes including:
-
-* Steals.
-* Blocks.
-* Defensive rebounds.
-* Contested shots.
-* Forced turnovers.
-* Deflections.
-* Shooting fouls.
-* Non-shooting fouls.
-* Charges.
-* Help defense.
-* Double teams.
-* Transition defense.
-
-Defensive schemes should create tradeoffs rather than simply increasing every defensive probability.
-
-For example:
-
-* Zone defense can protect the paint but allow more open three-point attempts.
-* Aggressive help defense can create turnovers but leave shooters open.
-* Full-court pressure can force turnovers but increase fatigue and allow transition chances.
-* Switching can defend pick-and-roll actions but create size mismatches.
-* Conservative defense can reduce fouls but create fewer steals and blocks.
-
-## Player Ratings
-
-Each player should have an overall rating and individual basketball ratings.
-
-Use a rating scale such as 25 to 99.
-
-Include at least:
-
-* Overall.
-* Inside scoring.
-* Dunking.
-* Layup finishing.
-* Mid-range shooting.
-* Three-point shooting.
-* Free-throw shooting.
-* Passing.
-* Ball handling.
-* Offensive rebounding.
-* Defensive rebounding.
-* Perimeter defense.
-* Interior defense.
-* Steal ability.
-* Block ability.
-* Speed.
-* Strength.
-* Athleticism.
-* Stamina.
-* Basketball IQ.
-* Offensive consistency.
-* Defensive consistency.
-* Potential.
-
-The overall rating should be calculated from the player’s skills, position, and archetype rather than assigned independently with no connection to the underlying ratings.
-
-Permanent player data must remain separate from mutable in-game state.
-
-Permanent data includes:
-
-* Name.
-* Position.
-* Height.
-* Weight.
-* Class year.
-* Ratings.
-* Potential.
-* Archetype.
-* Personality.
-* Hidden traits.
-
-In-game state includes:
-
-* Current stamina.
-* Fatigue.
-* Fouls.
-* Minutes played.
-* Confidence.
-* Hot or cold status.
-* Current role.
-* Availability.
-* Plus-minus.
-* Current matchup.
-
-Do not permanently change a player’s ratings during a single game.
-
-## Player Archetypes
-
-Give players recognizable archetypes, such as:
-
-* Floor-General Point Guard.
-* Scoring Point Guard.
-* Three-and-D Wing.
-* Slashing Wing.
-* Shot-Creating Guard.
-* Defensive Specialist.
-* Stretch Forward.
-* Interior Scorer.
-* Rim Protector.
-* Rebounding Center.
-* Point Forward.
-* Energy Bench Player.
-* Sixth Man.
-* Raw High-Upside Prospect.
-
-Archetypes should affect tendencies and role suitability but should not completely override individual ratings.
-
-## Personalities and Hidden Traits
-
-Add personality and hidden-trait systems that can eventually influence development, morale, chemistry, playing time, and transfer decisions.
-
-Possible personality traits:
-
-* Team-first.
-* Competitive.
-* Confident.
-* Quiet.
-* Vocal leader.
-* Emotional.
-* Selfish.
-* Loyal.
-* Impatient.
-* Coachable.
-* Hard-working.
-* Laid-back.
-
-Possible hidden traits:
-
-* Clutch.
-* Inconsistent.
-* Injury-prone.
-* Big-game performer.
-* Fast learner.
-* Slow developer.
-* High motor.
-* Low effort.
-* Foul-prone.
-* Turnover-prone.
-* Transfer risk.
-* Strong leadership.
-* Poor locker-room influence.
-
-Do not reveal every hidden trait immediately. Design the data structure so traits could later be discovered through scouting, practices, statistics, or experience.
-
-## Chemistry and Lineup Fit
-
-Players should not perform only as a sum of their individual overall ratings.
-
-Calculate lineup fit using factors such as:
-
-* Ball handling.
-* Passing.
-* Shooting and spacing.
-* Interior size.
-* Rebounding.
-* Perimeter defense.
-* Rim protection.
-* Athleticism.
-* Experience.
-* Player roles.
-* Personalities.
-* Familiarity.
-* Leadership.
-* Position balance.
-
-A lineup with five individually talented players should still have weaknesses if it lacks spacing, defense, ball handling, or rebounding.
-
-Chemistry should influence performance moderately without making ratings irrelevant.
-
-## Stamina and Fatigue
-
-Every player should have stamina and fatigue.
-
-Fatigue should increase based on:
-
-* Minutes played.
-* Game pace.
-* Defensive pressure.
-* Full-court pressing.
-* Player stamina.
-* Offensive usage.
-* Rebounding effort.
-* Athletic actions.
-* Short rest periods.
-
-Fatigue should negatively affect:
-
-* Shooting.
-* Finishing.
-* Defense.
-* Ball handling.
-* Rebounding.
-* Foul probability.
-* Turnover probability.
-* Speed.
-* Consistency.
-
-Players should recover stamina while on the bench, during timeouts, and at halftime.
-
-## Substitutions and Rotations
-
-Support:
-
-* Exactly five active players per team.
-* Starting lineups.
-* Bench players.
-* Depth charts.
-* Rotation size.
-* Target minutes.
-* Bench order.
-* Fatigue-based substitutions.
-* Foul-trouble substitutions.
-* Tactical substitutions.
-* Small-ball lineups.
-* Defensive lineups.
-* Shooting lineups.
-* Closing lineups.
-
-The user should be able to substitute players manually during legal game windows.
-
-AI-controlled teams should make substitutions based on:
-
-* Fatigue.
-* Fouls.
-* Player performance.
-* Matchups.
-* Coach tendencies.
-* Score margin.
-* Time remaining.
-* Rotation plan.
-
-Reject invalid lineups, including:
-
-* Duplicate players.
-* More or fewer than five players.
-* Players not on the roster.
-* Fouled-out players.
-* Injured or unavailable players.
-
-## Player Statistics
-
-Track complete player box-score statistics:
-
-* Minutes.
-* Points.
-* Field goals made.
-* Field goals attempted.
-* Two-point field goals made.
-* Two-point field goals attempted.
-* Three-point field goals made.
-* Three-point field goals attempted.
-* Free throws made.
-* Free throws attempted.
-* Offensive rebounds.
-* Defensive rebounds.
-* Total rebounds.
-* Assists.
-* Steals.
-* Blocks.
-* Turnovers.
-* Personal fouls.
-* Plus-minus.
-* Dunks.
-* Fast-break points.
-* Points in the paint.
-
-Team totals must reconcile with player totals.
-
-Statistics must never become negative.
-
-## Coaching Game Plans
-
-Before the game, allow the user to configure a coaching game plan.
-
-Include:
-
-### Pace
-
-* Very slow.
-* Slow.
-* Balanced.
-* Fast.
-* Very fast.
-
-Faster pace should produce more possessions, more transition opportunities, more fatigue, and possibly more turnovers.
-
-### Offensive Style
-
-* Balanced.
-* Motion offense.
-* Pick-and-roll heavy.
-* Isolation.
-* Post-focused.
-* Drive-and-kick.
-* Three-point focused.
-* Transition offense.
-* Inside-out offense.
-
-### Shot Profile
-
-Allow the coach to emphasize:
-
-* Shots at the rim.
-* Dunks and layups.
-* Mid-range shots.
-* Three-point shots.
-* Post touches.
-* Free-throw generation.
-
-### Primary Options
-
-Allow the user to select:
-
-* First scoring option.
-* Second scoring option.
-* Primary ball handler.
-* Primary post player.
-* Preferred late-game scorer.
-
-Higher usage should create more scoring opportunities but also more fatigue, defensive attention, and turnover risk.
-
-### Defensive Style
-
-* Man-to-man.
-* Zone.
-* Switching.
-* Conservative man defense.
-* Aggressive help defense.
-* Full-court press.
-
-### Additional Settings
-
-* Help-defense aggressiveness.
-* Press frequency.
-* Rebounding aggressiveness.
-* Double-team preference.
-* Foul-trouble substitution preference.
-* Rotation size.
-* Bench usage.
-* Timeout behavior.
-* Late-game fouling.
-* Protect-the-lead strategy.
-
-Every strategy should affect probabilities and tradeoffs. Strategies should not directly force outcomes.
-
-## Coaching Styles
-
-Create fictional coaches with styles and personalities.
-
-Possible coach archetypes:
-
-* Elite Recruiter.
-* Player Developer.
-* Analytics Coach.
-* Defensive Traditionalist.
-* Fast-Paced Innovator.
-* High-Variance Gambler.
-* Transfer Specialist.
-* Veteran-Focused Coach.
-* Motivator.
-* Tactical Adjuster.
-
-Each coach should have ratings such as:
-
-* Offensive coaching.
-* Defensive coaching.
-* Player development.
-* Recruiting.
-* Scouting.
-* Adaptability.
-* Rotation management.
-* Motivation.
-* Discipline.
-* Risk tolerance.
-
-Coaching ratings and styles should influence:
-
-* Strategy selection.
-* Rotation decisions.
-* Player development.
-* In-game adjustments.
-* Recruiting preferences.
-* Team consistency.
-* Player morale.
-* Style of play.
-
-For the first version, use explainable rule-based coaching decisions rather than neural networks.
-
-## In-Game Coaching Decisions
-
-During the game, create decision windows where the user or AI coach can:
-
-* Call a timeout.
-* Make substitutions.
-* Change pace.
-* Change offensive style.
-* Change defensive scheme.
-* Increase or decrease pressure.
-* Emphasize a player.
-* Protect a player in foul trouble.
-* Use a smaller or larger lineup.
-* Intentionally foul late.
-* Hold for the final shot.
-
-The mobile interface should support:
-
-* Advance one possession.
-* Simulate until the next stoppage.
-* Simulate until the next timeout.
-* Simulate to halftime.
-* Simulate to the end.
-* Pause for important coaching decisions.
-
-## Play-by-Play
-
-Display readable text events throughout the game.
-
-Examples:
-
-* “Marcus Reed drives past his defender and finishes the layup.”
-* “Darius Cole blocks the shot at the rim.”
-* “Evan Brooks grabs the offensive rebound.”
-* “Jaylen Carter finds Malik Evans open in the corner.”
-* “Malik Evans makes the three-pointer.”
-* “Westbridge switches to a 2-3 zone.”
-* “North Valley substitutes Liam Grant for Noah Price.”
-* “Carter commits his fourth foul and heads to the bench.”
-
-Play-by-play should be generated from structured events containing information such as:
-
-* Event ID.
-* Possession number.
-* Half.
-* Game clock.
-* Offensive team.
-* Defensive team.
-* Event type.
-* Players involved.
-* Offensive action.
-* Shot type.
-* Shot quality.
-* Result.
-* Score after the event.
-* Fatigue changes.
-* Foul changes.
-* Strategy tags.
-
-## Teams and Rosters
-
-Create at least 20 fictional college basketball programs.
-
-Do not use real NCAA team names or real player likenesses unless explicitly requested and legally appropriate.
-
-Each team should include:
-
-* Team ID.
-* School name.
-* Team nickname.
-* Abbreviation.
-* Primary and secondary colors.
-* Conference.
-* Prestige rating.
-* Team overall.
-* Offensive identity.
-* Defensive identity.
-* Coaching staff.
-* Full roster.
-* Starting lineup.
-* Depth chart.
-* Team strengths.
-* Team weaknesses.
-
-Create approximately 12 to 15 players per team.
-
-Each roster should include a believable mix of:
-
-* Point guards.
-* Shooting guards.
-* Small forwards.
-* Power forwards.
-* Centers.
-* Freshmen.
-* Sophomores.
-* Juniors.
-* Seniors.
-* Starters.
-* Bench players.
-* Development prospects.
-
-Do not make every team equally strong.
-
-Include:
-
-* Elite programs.
-* Strong tournament teams.
-* Average teams.
-* Rebuilding teams.
-* Small programs with one or two standout players.
-
-Team styles should vary significantly.
-
-Examples:
-
-* Fast, guard-heavy shooting team.
-* Slow defensive team.
-* Interior-focused rebounding team.
-* Deep pressing team.
-* Star-driven isolation team.
-* Balanced veteran team.
-* Young high-potential team.
-* Undersized analytics team.
-
-Store teams and players in structured data files so that more teams can be added later without rewriting the simulation.
-
-## Initial Screens
-
-Build these mobile-first screens:
-
-### Team Selection
-
-* Show all 20 teams.
-* Display team overall, prestige, style, strengths, and weaknesses.
-* Allow the user to choose one program.
-
-### Program Home
-
-* Team record.
-* Upcoming opponent.
-* Recent result.
-* Team strengths and weaknesses.
-* Starting lineup.
-* Fatigue or availability concerns.
-* Quick links to roster, strategy, and next game.
-
-### Roster
-
-* Player name.
-* Position.
-* Class.
-* Overall.
-* Key ratings.
-* Role.
-* Minutes.
-* Fatigue.
-* Morale or availability if supported.
-
-### Player Profile
-
-* Full ratings.
-* Archetype.
-* Personality.
-* Season statistics.
-* Strengths.
-* Weaknesses.
-* Potential.
-* Scouting or trait information.
-
-### Lineup and Rotation
-
-* Select five starters.
-* Reorder the depth chart.
-* Assign target minutes.
-* Choose rotation size.
-* Select a closing lineup.
-* Display lineup strengths and weaknesses.
-
-### Game Plan
-
-* Configure offensive and defensive strategies.
-* Select primary scoring options.
-* Adjust pace and rotation preferences.
-* Explain the tradeoffs of each choice.
-
-### Live Game
-
-* Score.
-* Clock.
-* Half.
-* Possession.
-* Team fouls.
-* Active lineups.
-* Player fatigue.
-* Play-by-play.
-* Recent team statistics.
-* Simulation controls.
-* Coaching decision controls.
-
-### Box Score
-
-* Final score.
-* Player statistics.
-* Team statistics.
-* Shooting percentages.
-* Rebounds.
-* Turnovers.
-* Fouls.
-* Bench points.
-* Points in the paint.
-* Fast-break points.
-
-## Architecture
-
-Keep the simulation engine independent from the user interface.
-
-The simulation should:
-
-* Not depend on React.
-* Not depend on browser APIs.
-* Accept typed game state and strategy inputs.
-* Return structured simulation events and results.
-* Support simulating one possession.
-* Support simulating one full game.
-* Support simulating many games for testing and balancing.
-* Be deterministic when given the same seed and inputs.
-
-Keep balancing constants in centralized configuration files.
-
-Do not scatter unexplained probability values throughout the code.
-
-Create clear domain models for:
-
-* Player.
-* PlayerRatings.
-* PlayerTraits.
-* PlayerGameState.
-* Team.
-* TeamRoster.
-* Coach.
-* CoachStyle.
-* Lineup.
-* RotationPlan.
-* TeamStrategy.
-* GameState.
-* PossessionState.
-* PlayerBoxScore.
-* TeamBoxScore.
-* GameEvent.
-* SimulationResult.
-* SeededRandom.
-* SimulationConfig.
-
-## Testing
-
-Add tests for:
-
-* The same seed producing the same game.
-* Different seeds usually producing different games.
-* Games always terminating.
-* Scores never decreasing.
-* Statistics never becoming negative.
-* Team totals matching player totals.
-* Five active players remaining on the court.
-* Invalid lineups being rejected.
-* Fouled-out players being unavailable.
-* Faster pace producing more possessions in aggregate.
-* Three-point emphasis producing more three-point attempts.
-* Pressing increasing fatigue and affecting turnovers.
-* Stronger teams winning more often across many simulations without winning every game.
-* Fatigued players performing worse in aggregate.
-* Offensive rebounds extending possessions.
-* Fouls and free throws updating correctly.
-* Substitutions updating active lineups and minutes correctly.
-
-Run large batches of deterministic simulations and inspect:
-
-* Average team scores.
-* Average possessions.
-* Shooting percentages.
-* Two-point and three-point attempt rates.
-* Turnover rates.
-* Rebounding rates.
-* Foul totals.
-* Player minutes.
-* Upset frequency.
-
-Results do not need to perfectly match real college basketball immediately, but they should be believable.
-
-## Development Priorities
-
-Implement the project in this order:
-
-### Phase 1
-
-* Core data models.
-* Seeded random-number generator.
-* 20 teams and complete fictional rosters.
-* Basic player ratings.
-* Possession-based simulation.
-* Layups, dunks, mid-range shots, three-pointers, rebounds, turnovers, steals, blocks, fouls, and free throws.
-* Player and team statistics.
-* Complete game simulation.
-* Basic text play-by-play.
-
-### Phase 2
-
-* Mobile team selection.
-* Roster and player profile screens.
-* Starting lineup and rotation management.
-* Game-plan configuration.
-* Live simulation screen.
-* Box score screen.
-
-### Phase 3
-
-* Fatigue-based substitutions.
-* Foul trouble.
-* Coaching adjustments.
-* Chemistry and lineup fit.
-* Player personalities and hidden traits.
-* More detailed offensive actions and defensive schemes.
-
-### Phase 4
-
-* Schedule and standings.
-* Season simulation.
-* Player progression.
-* Recruiting.
-* Transfer portal.
-* Morale.
-* Injuries.
-* Coach careers.
-* Rivalries.
-* Multi-season dynasty saves.
-
-Do not begin by implementing every dynasty feature. First create one polished, complete flow:
-
-Select a team → review the roster → set the lineup and strategy → simulate a full game → view the final box score.
-
-Use clean architecture, explicit types, reusable data structures, deterministic simulation logic, and tests. Avoid fake controls that do not affect the game. Every visible strategy or coaching option must connect to the underlying simulation.
+### Verification already in place
+
+Tests cover:
+
+- Same seed and inputs producing the same game.
+- Invalid lineups being rejected.
+- Game termination and overtime handling.
+- Nonnegative statistics and player/team total reconciliation.
+- Twenty teams with valid roster depth.
+- Stable and varied player avatar configuration.
+
+Run:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+## Design and engineering rules
+
+### Determinism
+
+- All simulation randomness must come from an injected seeded RNG.
+- A save state, seed, teams, lineups, strategies, and schedule must reproduce the same result.
+- Do not use `Math.random()` inside the engine, season systems, recruiting, development, or AI decisions.
+- Centralize balancing constants in configuration modules instead of scattering unexplained probability values.
+
+### Basketball integrity
+
+- Always validate that exactly five eligible players are active for each team.
+- Fouled-out or unavailable players cannot return to a lineup.
+- Statistics cannot become negative.
+- Team totals must reconcile with player totals.
+- Strategy, player ratings, fatigue, lineups, chemistry, coaching, and matchups should influence outcomes through explainable tradeoffs.
+- Faster pace should generally create more possessions, transition opportunities, fatigue, and turnover risk.
+- Zone, pressing, aggressive help, switching, and conservative defense must create different strengths and weaknesses rather than simply improving every outcome.
+
+### Product experience
+
+- Mobile usability is the priority; desktop layouts are a secondary enhancement.
+- Prefer compact rows, editorial sections, and thin dividers over dense tables and card grids.
+- Use team colors as accents rather than large page backgrounds.
+- Keep important actions near the top or in a sticky mobile control area.
+- Do not add a control until its effect is connected to real state or the simulation.
+- Keep simulation logic separate from React presentation code.
+- Use reusable components, but avoid unnecessary abstraction and large frontend rewrites.
+
+## Future roadmap
+
+The following systems are intentionally not complete yet. They are the next major phases and must be added incrementally without regressing the current playable flow.
+
+### Phase 4 — Season structure, schedules, and standings (foundation complete)
+
+- The reproducible schedule, conferences, home/away games, completed/upcoming status, records, standings, schedule navigation, AI simulation, and persistence boundary are implemented.
+- Future work: basic national rankings, richer end-of-season results, conference tournaments, postseason brackets, and better schedule balance/strength-of-schedule logic.
+
+### Phase 5 — Truly interactive live games
+
+The current live screen controls playback of a completed deterministic result. Future work must make decision windows affect future possessions through the real engine, not only change displayed text.
+
+- Expose a resumable game state and one-possession/next-stoppage simulation APIs.
+- Pause at legal decision windows and support substitutions, timeouts, pace changes, offensive style, shot emphasis, defensive scheme, pressing, rebounding aggression, foul-trouble protection, primary scoring options, lineup packages, intentional fouls, hold-for-final-shot, halftime, and late-game decisions.
+- Support advance one possession, next stoppage, next timeout, halftime, and end-of-game controls.
+- Show active five, bench, position warnings, minutes, fatigue, fouls, timeout state, and possession clearly on mobile.
+- Make all in-game strategy and substitution controls affect future simulation state.
+
+### Phase 6 — Season statistics and game history (aggregation foundation complete)
+
+- Player and team record aggregation, scoring leaders, game history references, scores, box scores, opponents, home/away results, and streaks are now sourced from completed results.
+- Future work: starts, minutes-per-game, shooting percentage views, complete player/team game logs, conference/national leaders across categories, season highs, ranked wins, and largest wins/losses.
+- Derive all future totals from completed game results; never generate separate fake season totals.
+
+### Phase 7 — Player development and progression
+
+- Add deterministic offseason and in-season development.
+- Account for potential, class year, age, playing time, performance, coach development ability, work ethic, coachability, personality, practice focus, injuries when implemented, and current skill level.
+- Add development focus options: shooting, finishing, playmaking, defense, rebounding, athleticism, conditioning, and balanced.
+- Support gradual improvement, plateaus, inconsistency, and decline without making every player elite.
+- Keep development reproducible from the same save state and seed.
+
+### Phase 8 — Recruiting
+
+- Add fictional high-school and junior-college prospects with positions, archetypes, estimated ratings, potential, skill estimates, scouting confidence, personality indicators, preferences, and competing schools.
+- Add a recruiting board with search/filter, scouting, targets, resource spending, scholarship offers, removals, competing schools, commitments, and signed classes.
+- Keep hidden ratings hidden until sufficient scouting.
+- Add meaningful limits and tradeoffs so the user cannot recruit every prospect.
+- Use coach recruiting ability, program prestige, success, system fit, location, academics, position need, and staff relationships.
+
+### Phase 9 — Transfers and roster movement
+
+- Add an offseason transfer portal and available-player recruiting.
+- Model transfer decisions using playing time, role, success, coach relationship, competition, personality, distance when modeled, prestige, usage, and broken promises if added later.
+- Handle graduates, early departures, eligibility, scholarship limits, roster limits, incoming recruits, and walk-ons.
+- Model transfer chemistry, role expectations, and development timelines.
+
+### Phase 10 — Persistent coaches and AI programs
+
+- Expand coach profiles with age, experience, career record, archetype, preferences, recruiting, development, scouting, adaptability, risk tolerance, personality, and career history.
+- Have AI teams set lineups, rotations, game plans, substitutions, adjustments, recruiting boards, transfer priorities, development plans, scholarships, and roster needs.
+- Use understandable rule-based behavior first. Do not add neural networks or opaque learning systems.
+- Make AI teams follow the same basketball, roster, recruiting, scholarship, and eligibility rules as the user.
+
+### Phase 11 — Opponent scouting and pregame reports
+
+- Use actual opponent ratings, strategies, coach behavior, and season results to show record, ranking, recent results, expected starters, key bench players, strengths, weaknesses, styles, pace, shot profile, rebounding, turnovers, fouls, injuries, and tactical trends.
+- Generate useful suggested concerns such as protecting the paint, defending the three, slowing the pace, attacking a weak interior defender, pressuring an inexperienced point guard, or limiting transition chances.
+- Do not expose hidden AI policies or exact probability formulas.
+
+### Phase 12 — Dynasty persistence and program records (local save foundation complete)
+
+- Versioned local persistence now stores the current season, schedule, results, standings, rosters, player ratings, season totals, user lineup, strategy, and deterministic seeds.
+- Future work: multiple save slots, corrupted-save recovery UI, backend/cloud replacement, roster movement, development, recruiting, transfers, coach careers, rivalries, morale, injuries, multi-season progression, and complete dynasty saves.
+
+## Recommended implementation order
+
+1. Add the season state model and deterministic schedule generator.
+2. Add game completion hooks that update records and season aggregates.
+3. Add standings, schedule navigation, and AI-versus-AI day advancement.
+4. Refactor the simulation into resumable possession/decision-window state for interactive live coaching.
+5. Add season statistics and history views.
+6. Add progression, recruiting, transfers, coaches, scouting, and dynasty persistence in separate increments.
+
+At every phase, preserve the existing flow:
+
+```text
+Choose a team → inspect roster → set lineup → configure plan → review matchup → simulate game → follow events → view box score
+```
+
+Do not start a later phase by rebuilding working simulation or frontend systems. Add explicit types, deterministic tests, and a user-visible path for each completed feature.
