@@ -66,7 +66,13 @@ export function createSeasonState(teams: Team[], userTeamId: string, seed = 2026
 }
 
 function copyState(state: SeasonState): SeasonState {
-  return JSON.parse(JSON.stringify(state)) as SeasonState;
+  const { teams, ...mutable } = state;
+  const copy = { ...JSON.parse(JSON.stringify(mutable)), teams } as SeasonState;
+  for (const game of copy.schedule) if (game.result) {
+    game.result.home.team = teams.find((team) => team.id === game.result?.home.team.id) ?? game.result.home.team;
+    game.result.away.team = teams.find((team) => team.id === game.result?.away.team.id) ?? game.result.away.team;
+  }
+  return copy;
 }
 
 export function getNextUserGame(state: SeasonState): ScheduledGame | undefined {

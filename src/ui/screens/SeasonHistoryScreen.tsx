@@ -1,0 +1,9 @@
+import { ArrowLeft, Trophy } from "lucide-react";
+import type { SeasonState, Team } from "../../domain/types";
+import { ScreenHeader } from "../components/ScreenHeader";
+import { TeamMark } from "../components/TeamMark";
+
+export function SeasonHistoryScreen({ state, team, onBack }: { state: SeasonState; team: Team; onBack: () => void }) {
+  const games = state.schedule.filter((game) => game.status === "completed" && game.result && (game.homeTeamId === team.id || game.awayTeamId === team.id));
+  return <div className="screen-stack"><ScreenHeader eyebrow={`${state.seasonYear} SEASON · GAME HISTORY`} title="Season history" subtitle={`${games.length} completed games · ${state.records[team.id].wins}–${state.records[team.id].losses}`} onBack={onBack} /><section className="history-list">{games.map((game) => { const opponentId = game.homeTeamId === team.id ? game.awayTeamId : game.homeTeamId; const opponent = state.teams.find((candidate) => candidate.id === opponentId)!; const result = game.result!; const won = result.winnerId === team.id; const userScore = result.home.team.id === team.id ? result.home.stats.points : result.away.stats.points; const opponentScore = result.home.team.id === team.id ? result.away.stats.points : result.home.stats.points; return <div key={game.id}><span className="history-day">DAY {game.day}</span><TeamMark team={opponent} size="sm" /><div><b>{game.homeTeamId === team.id ? "vs" : "at"} {opponent.shortName}</b><small>{game.conferenceGame ? "Conference" : "Non-conference"}</small></div><strong className={won ? "result-win" : "result-loss"}>{won ? "W" : "L"} {userScore}–{opponentScore}</strong></div>; })}</section>{!games.length && <p className="empty-lineup">No completed games yet.</p>}<button className="back-link" onClick={onBack}><ArrowLeft size={14} /> Back to season summary</button>{games.length > 0 && <div className="season-seal"><Trophy size={17} /> Complete results remain stored in this career</div>}</div>;
+}

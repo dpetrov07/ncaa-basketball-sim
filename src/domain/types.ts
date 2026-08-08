@@ -374,3 +374,44 @@ export interface SeasonState {
   playerStats: Record<string, SeasonPlayerStats>;
   history: string[];
 }
+
+export type UserCoachArchetype = "Balanced" | "Offensive Mind" | "Defensive Specialist" | "Player Developer" | "Analytics Coach" | "Motivator" | "Fast-Paced Coach";
+export type CoachOffensivePhilosophy = "Balanced" | "Motion" | "Pick and Roll" | "Inside Out" | "Perimeter" | "Transition";
+export type CoachDefensivePhilosophy = "Man to Man" | "Zone" | "Switching" | "Pressure" | "Conservative";
+
+export interface CoachAppearance {
+  skin: number;
+  hairstyle: number;
+  hairColor: number;
+  facialHair: number;
+  expression: number;
+}
+
+export interface UserCoach {
+  id: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  archetype: UserCoachArchetype;
+  offensivePhilosophy: CoachOffensivePhilosophy;
+  defensivePhilosophy: CoachDefensivePhilosophy;
+  appearance: CoachAppearance;
+}
+
+export type CareerStage = "program-selection" | "season-introduction" | "season" | "season-complete";
+
+export interface CareerSave {
+  schemaVersion: 2;
+  careerId: string;
+  stage: CareerStage;
+  coach: UserCoach;
+  programId?: string;
+  seasonObjective?: string;
+  season?: SeasonState;
+  liveGame?: {
+    gameId: string;
+    state: GameState;
+  };
+  createdAt: number;
+  updatedAt: number;
+}

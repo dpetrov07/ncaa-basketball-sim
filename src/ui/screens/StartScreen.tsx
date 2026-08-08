@@ -1,0 +1,5 @@
+import { ArrowRight, RotateCcw, Trash2 } from "lucide-react";
+
+export function StartScreen({ hasSave, loadError, onNewCareer, onContinue, onDelete }: { hasSave: boolean; loadError?: string; onNewCareer: () => void; onContinue: () => void; onDelete: () => void }) {
+  return <div className="start-screen"><div className="start-brand"><span className="brand-dot" /><span>COURTSIDE</span></div><div className="start-copy"><span className="eyebrow">SINGLE-SEASON CAREER</span><h1>Courtside</h1><p>College Basketball Coaching Simulator</p></div>{loadError && <div className="save-recovery"><b>Save recovery needed</b><span>{loadError}</span><button onClick={onDelete}><Trash2 size={14} /> Delete incompatible save</button></div>}<div className="start-actions"><button className="primary-action" onClick={onNewCareer}>New Career <ArrowRight size={17} /></button>{hasSave && <button className="quiet-action" onClick={onContinue}>Continue <ArrowRight size={15} /></button>}{hasSave && <button className="text-button danger-text" onClick={onDelete}><RotateCcw size={13} /> Delete career</button>}</div><small>COURTSIDE ENGINE · v0.3</small></div>;
+}

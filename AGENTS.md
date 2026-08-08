@@ -51,6 +51,8 @@ Implemented in `src/ui/`:
 - Deterministic layered SVG portraits derived from player IDs. The same player must always receive the same portrait.
 - Restrained sports-editorial visual system: neutral surfaces, thin dividers, compact typography, and team colors used as accents.
 - Season hub with team schedule, next-game actions, conference standings, record summary, and season scoring leaders.
+- Minimal start menu, created-coach onboarding, one-program job acceptance, season introduction, locked single-player career flow, and end-of-season summary.
+- Deterministic coach portraits with selectable appearance, archetype, and offensive/defensive philosophies.
 
 Visible controls must either affect the underlying simulation or navigate to the real screen where that decision is made. Avoid fake controls and placeholder panels.
 
@@ -68,6 +70,17 @@ Implemented in `src/season/`:
 - User lineup and strategy preferences included in the saved season state.
 
 The season and interactive-game foundations now work together. A scheduled game is initialized without precomputing its result, can be resumed deterministically from serialized state, and is committed to season records and aggregates only after completion.
+
+### Career and save foundation
+
+Implemented in `src/career/` and `src/season/persistence.ts`:
+
+- A versioned single-season `CareerSave` is the canonical mutable game state.
+- The created coach, accepted program, career stage, season objective, full season state, preferences, and unfinished live game are autosaved.
+- Static team, roster, rating, and AI-coach data are persisted by ID reference and rehydrated from `src/data/teams.ts`.
+- The normal player-facing flow no longer allows program switching after the season begins.
+- Invalid or legacy saves surface a recovery action instead of crashing.
+- The current local-storage key is `courtside-career-v2`; the repository interface is the backend replacement boundary.
 
 ### Verification already in place
 
@@ -128,7 +141,7 @@ The following systems are intentionally not complete yet. They are the next majo
 
 ### Phase 5 — Truly interactive live games (foundation complete)
 
-The current live screen controls playback of a completed deterministic result. Future work must make decision windows affect future possessions through the real engine, not only change displayed text.
+The current live screen advances a canonical running game. Decision-window changes affect only future possessions through the real engine.
 
 - Serializable game state, one-possession/next-stoppage stepping, deterministic resume, active-five substitutions, timeouts, and in-game pace/offense/shot/defense/press/rebounding changes are implemented.
 - Advance one possession, next stoppage, halftime, resume/pause, and end-of-game controls are implemented.
@@ -178,8 +191,8 @@ The current live screen controls playback of a completed deterministic result. F
 
 ### Phase 12 — Dynasty persistence and program records (local save foundation complete)
 
-- Versioned local persistence now stores the current season, schedule, results, standings, rosters, player ratings, season totals, user lineup, strategy, and deterministic seeds.
-- Future work: multiple save slots, corrupted-save recovery UI, backend/cloud replacement, roster movement, development, recruiting, transfers, coach careers, rivalries, morale, injuries, multi-season progression, and complete dynasty saves.
+- Versioned local persistence now stores the created coach, selected program, career stage, current season, schedule, results, standings inputs, season totals, user lineup, strategy, deterministic seeds, and unfinished live game. Static rosters and ratings are rehydrated by ID.
+- Future work: multiple save slots, richer corrupted-save recovery, backend/cloud replacement, roster movement, development, recruiting, transfers, expanded coach careers, rivalries, morale, injuries, and multi-season progression.
 
 ## Recommended implementation order
 
@@ -193,7 +206,7 @@ The current live screen controls playback of a completed deterministic result. F
 At every phase, preserve the existing flow:
 
 ```text
-Choose a team → inspect roster → set lineup → configure plan → review matchup → simulate game → follow events → view box score
+New career → create coach → accept one program → start season → inspect roster → set lineup → configure plan → review matchup → coach game → view box score → finish season
 ```
 
 Do not start a later phase by rebuilding working simulation or frontend systems. Add explicit types, deterministic tests, and a user-visible path for each completed feature.

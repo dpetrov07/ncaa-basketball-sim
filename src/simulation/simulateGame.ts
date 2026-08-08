@@ -37,7 +37,10 @@ const emptyTeamStats = (teamId: string): TeamStats => ({
 });
 
 function cloneState(state: GameState): GameState {
-  return JSON.parse(JSON.stringify(state)) as GameState;
+  const copy = JSON.parse(JSON.stringify(state)) as GameState;
+  copy.home.team = state.home.team;
+  copy.away.team = state.away.team;
+  return copy;
 }
 
 function makeRuntime(team: Team, lineup: Lineup, strategy: Strategy): GameRuntimeTeam {

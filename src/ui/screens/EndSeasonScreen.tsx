@@ -1,0 +1,30 @@
+import { BarChart3, BookOpen, CheckCircle2, Home, Trophy, XCircle } from "lucide-react";
+import type { CareerSave, ScheduledGame, Team } from "../../domain/types";
+import { getStandings } from "../../season/season";
+import { objectiveMet, seasonLeaders } from "../../career/career";
+import { CoachAvatar, PlayerAvatar } from "../components/Avatar";
+import { ScreenHeader } from "../components/ScreenHeader";
+import { TeamMark } from "../components/TeamMark";
+
+function margin(game: ScheduledGame, teamId: string): number { const result = game.result!; const user = result.home.team.id === teamId ? result.home.stats.points : result.away.stats.points; const opponent = result.home.team.id === teamId ? result.away.stats.points : result.home.stats.points; return user - opponent; }
+
+export function EndSeasonScreen({ career, team, onViewSeason, onViewStats, onMainMenu }: { career: CareerSave; team: Team; onViewSeason: () => void; onViewStats: () => void; onMainMenu: () => void }) {
+  const season = career.season!;
+  const record = season.records[team.id];
+  const standings = getStandings(season, team.conference);
+  const standing = standings.findIndex((entry) => entry.teamId === team.id) + 1;
+  const games = season.schedule.filter((game) => game.status === "completed" && game.result && (game.homeTeamId === team.id || game.awayTeamId === team.id));
+  const wins = games.filter((game) => margin(game, team.id) > 0).sort((a, b) => margin(b, team.id) - margin(a, team.id));
+  const losses = games.filter((game) => margin(game, team.id) < 0).sort((a, b) => margin(a, team.id) - margin(b, team.id));
+  let longestStreak = 0; let streak = 0;
+  for (const game of games) { streak = margin(game, team.id) > 0 ? streak + 1 : 0; longestStreak = Math.max(longestStreak, streak); }
+  const leaders = seasonLeaders(season, team.id);
+  const player = (id?: string) => team.roster.find((candidate) => candidate.id === id);
+  const met = objectiveMet(career);
+  const winPercentage = record.wins / Math.max(1, record.wins + record.losses);
+  const grade = met && winPercentage >= .7 ? "Excellent season" : met ? "Successful season" : winPercentage >= .5 ? "Met expectations" : "Disappointing season";
+  const opponentName = (game?: ScheduledGame) => game ? season.teams.find((candidate) => candidate.id === (game.homeTeamId === team.id ? game.awayTeamId : game.homeTeamId))?.shortName : "—";
+  const bestPerformance = [...Object.values(season.playerStats)].filter((stats) => team.roster.some((candidate) => candidate.id === stats.playerId)).sort((a, b) => b.seasonHighPoints - a.seasonHighPoints)[0];
+  const leaderItems = [{ label: "SCORING", stats: leaders.scorer, value: leaders.scorer ? (leaders.scorer.points / leaders.scorer.gamesPlayed).toFixed(1) : "—" }, { label: "REBOUNDING", stats: leaders.rebounder, value: leaders.rebounder ? (leaders.rebounder.rebounds / leaders.rebounder.gamesPlayed).toFixed(1) : "—" }, { label: "ASSISTS", stats: leaders.assister, value: leaders.assister ? (leaders.assister.assists / leaders.assister.gamesPlayed).toFixed(1) : "—" }];
+  return <div className="screen-stack end-season"><ScreenHeader eyebrow={`${season.seasonYear} SEASON · COMPLETE`} title={grade} subtitle={`${career.coach.firstName} ${career.coach.lastName}'s first season at ${team.name}`} /><section className="end-hero panel-lite"><TeamMark team={team} size="lg" /><div><span>FINAL RECORD</span><h2>{record.wins}–{record.losses}</h2><p>{record.conferenceWins}–{record.conferenceLosses} conference · #{standing} finish</p></div><CoachAvatar coach={career.coach} team={team} size={70} /></section><section className={`objective-result ${met ? "met" : "missed"}`}>{met ? <CheckCircle2 size={20} /> : <XCircle size={20} />}<div><span>SEASON OBJECTIVE · {met ? "ACHIEVED" : "NOT MET"}</span><b>{career.seasonObjective}</b></div></section><section className="end-metrics"><div><span>BEST WIN</span><b>{wins[0] ? `+${margin(wins[0], team.id)} vs ${opponentName(wins[0])}` : "—"}</b></div><div><span>WORST LOSS</span><b>{losses[0] ? `${margin(losses[0], team.id)} vs ${opponentName(losses[0])}` : "—"}</b></div><div><span>LONGEST WIN STREAK</span><b>{longestStreak}</b></div><div><span>BEST PERFORMANCE</span><b>{bestPerformance ? `${player(bestPerformance.playerId)?.name} · ${bestPerformance.seasonHighPoints} PTS` : "—"}</b></div></section><section><div className="section-label"><span>TEAM LEADERS</span><span>PER GAME</span></div><div className="end-leaders">{leaderItems.map((item) => { const leader = player(item.stats?.playerId); return <div key={item.label}>{leader && <PlayerAvatar player={leader} team={team} size={39} />}<span><small>{item.label}</small><b>{leader?.name ?? "—"}</b></span><strong>{item.value}</strong></div>; })}</div></section><div className="end-actions"><button className="quiet-action" onClick={onViewSeason}><BookOpen size={15} /> View Season History</button><button className="quiet-action" onClick={onViewStats}><BarChart3 size={15} /> View Final Stats</button><button className="primary-action" onClick={onMainMenu}><Home size={15} /> Return to Main Menu</button></div><div className="season-seal"><Trophy size={18} /> Season saved and available to continue viewing</div></div>;
+}
