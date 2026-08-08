@@ -30,6 +30,8 @@ export function PlayerAvatar({ player, team, size = 52 }: { player: PlayerProfil
   return <PortraitAvatar avatar={avatar} colors={team.colors} size={size} name={player.name} />;
 }
 
+export const PlayerPortrait = PlayerAvatar;
+
 export function CoachAvatar({ coach, team, size = 72 }: { coach: UserCoach; team?: Team; size?: number }) {
   const avatar = {
     skin: skinTones[coach.appearance.skin % skinTones.length],
@@ -38,14 +40,14 @@ export function CoachAvatar({ coach, team, size = 72 }: { coach: UserCoach; team
     facialHair: facialHairs[coach.appearance.facialHair % facialHairs.length],
     expression: expressions[coach.appearance.expression % expressions.length],
   };
-  return <PortraitAvatar avatar={avatar} colors={team?.colors ?? ["#7ed5bd", "#243548"]} size={size} name={`${coach.firstName} ${coach.lastName}`} />;
+  return <PortraitAvatar avatar={avatar} colors={team?.colors ?? ["#243b64", "#dfe4eb"]} size={size} name={`${coach.firstName} ${coach.lastName}`} />;
 }
 
 function PortraitAvatar({ avatar, colors, size, name }: { avatar: ReturnType<typeof avatarConfig>; colors: [string, string]; size: number; name: string }) {
   const eyeY = avatar.expression === "focused" ? 47 : 45;
   return <svg className="player-avatar" style={{ width: size, height: size }} viewBox="0 0 100 100" role="img" aria-label={`${name} portrait`}>
-    <rect width="100" height="100" rx="18" fill="#273744" />
-    <rect width="100" height="100" rx="18" fill={colors[1]} opacity=".18" />
+    <rect width="100" height="100" rx="18" fill="#eef0f2" />
+    <rect width="100" height="100" rx="18" fill={colors[1]} opacity=".16" />
     <path d="M13 100c4-20 18-30 37-30s33 10 37 30" fill={colors[0]} opacity=".84" />
     <path d="M27 80c14 6 32 6 46 0v20H27z" fill="#1c2c38" opacity=".42" />
     <path d="M29 46c0-19 8-31 21-31 15 0 23 12 23 31 0 18-9 31-23 31-13 0-21-13-21-31z" fill={avatar.skin} />

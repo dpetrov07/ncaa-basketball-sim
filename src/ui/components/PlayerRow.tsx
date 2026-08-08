@@ -3,6 +3,7 @@ import { PlayerAvatar } from "./Avatar";
 
 export function PlayerRow({ player, team, selected = false, onClick, role, detail = "shooting" }: { player: PlayerProfile; team: Team; selected?: boolean; onClick?: () => void; role?: string; detail?: "shooting" | "defense" | "full" }) {
   const content = <>
+    <span className="player-number">{team.roster.findIndex((candidate) => candidate.id === player.id) + 1}</span>
     <PlayerAvatar player={player} team={team} size={46} />
     <div className="player-row-copy"><strong>{player.name}</strong><span>{player.position} · {player.classYear} · {role ?? player.archetype}</span></div>
     <div className="player-row-ratings"><b>{player.ratings.overall}</b><small>OVR</small></div>

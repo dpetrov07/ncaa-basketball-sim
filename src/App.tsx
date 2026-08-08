@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import type { CareerSave, GameResult, GameState, PlayerProfile, SeasonState, Strategy, UserCoach } from "./domain/types";
 import { defaultLineup, teams } from "./data/teams";
 import { acceptProgram, createCareer, settleCareerStage, startSeason } from "./career/career";
@@ -13,6 +14,7 @@ import { EndSeasonScreen } from "./ui/screens/EndSeasonScreen";
 import { GamePlanScreen } from "./ui/screens/GamePlanScreen";
 import { LineupScreen } from "./ui/screens/LineupScreen";
 import { LiveGameScreen } from "./ui/screens/LiveGameScreen";
+import { MoreScreen } from "./ui/screens/MoreScreen";
 import { PregameScreen } from "./ui/screens/PregameScreen";
 import { ProgramHome } from "./ui/screens/ProgramHome";
 import { ProgramSelectionScreen } from "./ui/screens/ProgramSelectionScreen";
@@ -162,8 +164,8 @@ function App() {
 
   function finishBoxScore() { setView(career?.stage === "season-complete" ? "end-season" : "home"); }
 
-  const careerShell = Boolean(career && season && team && ["home", "season", "roster", "lineup", "gameplan", "pregame", "live", "boxscore", "end-season", "history", "stats"].includes(view));
-  const activeMain: MainView = view === "season" || view === "roster" || view === "lineup" || view === "gameplan" ? view : "home";
+  const careerShell = Boolean(career && season && team && ["home", "season", "roster", "lineup", "gameplan", "more", "pregame", "live", "boxscore", "end-season", "history", "stats"].includes(view));
+  const activeMain: MainView = view === "season" || view === "roster" || view === "gameplan" || view === "more" ? view : view === "lineup" || view === "history" || view === "stats" ? "more" : "home";
 
   if (view === "start") return <StartScreen hasSave={Boolean(career)} loadError={loadError} onNewCareer={() => { setLoadError(undefined); setView("coach-create"); }} onContinue={continueCareer} onDelete={deleteCareer} />;
   if (view === "coach-create") return <div className="onboarding-shell"><CoachCreationScreen onBack={() => setView("start")} onComplete={createCoach} /></div>;
@@ -171,13 +173,15 @@ function App() {
   if (view === "season-intro" && career && team) return <div className="onboarding-shell"><SeasonIntroductionScreen career={career} team={team} onBack={() => setView("program-select")} onStart={beginSeason} /></div>;
   if (!careerShell || !career || !season || !team) return <StartScreen hasSave={Boolean(career)} loadError={loadError} onNewCareer={() => setView("coach-create")} onContinue={continueCareer} onDelete={deleteCareer} />;
 
-  return <div className="app-shell"><header className="topbar"><button className="brand" onClick={() => navigateMain("home")}><span className="brand-dot" /> COURTSIDE</button><div className="topbar-right"><span className="season-pill">{season.seasonYear} SEASON · DAY {season.currentDay}</span><CoachAvatar coach={career.coach} team={team} size={30} /></div></header><main>
+  const shellStyle = { "--team-primary": team.colors[0], "--team-secondary": team.colors[1] } as CSSProperties;
+  return <div className="app-shell" data-view={view} style={shellStyle}><header className="topbar"><button className="brand" onClick={() => navigateMain("home")}><span className="brand-dot" /> COURTSIDE</button><div className="topbar-right"><span className="season-pill">{season.seasonYear} Season · Day {season.currentDay}</span><CoachAvatar coach={career.coach} team={team} size={30} /></div></header><main>
     {view === "home" && opponent && <ProgramHome team={team} opponent={opponent} result={lastResult ?? null} season={season} nextGame={nextUserGame} gameInProgress={career.liveGame?.state.status === "playing"} coach={career.coach} onNavigate={navigateMain} onPregame={prepareForGame} />}
     {view === "home" && !opponent && <EndSeasonScreen career={career} team={team} onViewSeason={() => setView("history")} onViewStats={() => setView("stats")} onMainMenu={() => setView("start")} />}
     {view === "season" && <SeasonScreen state={season} team={team} onAdvanceDay={() => updateSeason(advanceOneDay(season))} onAdvanceNextGame={() => updateSeason(advanceToNextUserGame(season))} onPlayNextGame={prepareForGame} />}
-    {view === "roster" && <RosterScreen team={team} selectedPlayerId={selectedPlayerId} onSelect={(player: PlayerProfile) => setSelectedPlayerId(player.id)} />}
+    {view === "roster" && <RosterScreen team={team} season={season} selectedPlayerId={selectedPlayerId} onSelect={(player: PlayerProfile) => setSelectedPlayerId(player.id)} />}
     {view === "lineup" && <LineupScreen team={team} lineup={season.userLineup} strategy={season.userStrategy} onToggle={toggleStarter} onReset={resetLineup} onPregame={prepareForGame} />}
     {view === "gameplan" && <GamePlanScreen team={team} strategy={season.userStrategy} onUpdate={updateStrategy} onPregame={prepareForGame} />}
+    {view === "more" && <MoreScreen team={team} coach={career.coach} onLineup={() => setView("lineup")} onHistory={() => setView("history")} onStats={() => setView("stats")} onMainMenu={() => setView("start")} />}
     {view === "pregame" && opponent && nextUserGame && <PregameScreen team={team} opponent={opponent} lineup={season.userLineup} strategy={season.userStrategy} game={nextUserGame} teamRecord={season.records[team.id]} opponentRecord={season.records[opponent.id]} error={error} onBack={() => setView("home")} onSimulate={tipOff} />}
     {view === "live" && career.liveGame && <LiveGameScreen state={career.liveGame.state} userTeamId={team.id} game={season.schedule.find((scheduled) => scheduled.id === career.liveGame?.gameId)} onStateChange={updateRunningGame} onBoxScore={openBoxScore} />}
     {view === "boxscore" && boxResult && <BoxScoreScreen result={boxResult} onBack={finishBoxScore} backLabel={career.stage === "season-complete" ? "View season summary" : "Return to Program Home"} />}
