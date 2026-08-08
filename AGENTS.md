@@ -44,7 +44,7 @@ Implemented in `src/ui/`:
 - Lineup and rotation management.
 - Game Plan configuration.
 - Pregame matchup screen.
-- Live simulation screen with play controls, score, clock, recent action, lineups, fatigue estimates, fouls, and key statistics.
+- Live simulation screen driven by canonical resumable game state, with possession/stoppage/halftime/end controls, score, clock, recent action, active lineups, fatigue, fouls, minutes, timeouts, substitutions, strategy changes, and key statistics.
 - Final box score.
 - Compact mobile bottom navigation and deeper-screen back actions.
 - Responsive mobile and desktop layouts.
@@ -67,7 +67,7 @@ Implemented in `src/season/`:
 - Versioned local-storage persistence with safe loading, autosave after meaningful actions, and new-save reset behavior.
 - User lineup and strategy preferences included in the saved season state.
 
-This is the first season/dynasty milestone. The live screen still replays a completed game result; it is not yet a resumable possession state with mid-game decisions.
+The season and interactive-game foundations now work together. A scheduled game is initialized without precomputing its result, can be resumed deterministically from serialized state, and is committed to season records and aggregates only after completion.
 
 ### Verification already in place
 
@@ -126,15 +126,13 @@ The following systems are intentionally not complete yet. They are the next majo
 - The reproducible schedule, conferences, home/away games, completed/upcoming status, records, standings, schedule navigation, AI simulation, and persistence boundary are implemented.
 - Future work: basic national rankings, richer end-of-season results, conference tournaments, postseason brackets, and better schedule balance/strength-of-schedule logic.
 
-### Phase 5 — Truly interactive live games
+### Phase 5 — Truly interactive live games (foundation complete)
 
 The current live screen controls playback of a completed deterministic result. Future work must make decision windows affect future possessions through the real engine, not only change displayed text.
 
-- Expose a resumable game state and one-possession/next-stoppage simulation APIs.
-- Pause at legal decision windows and support substitutions, timeouts, pace changes, offensive style, shot emphasis, defensive scheme, pressing, rebounding aggression, foul-trouble protection, primary scoring options, lineup packages, intentional fouls, hold-for-final-shot, halftime, and late-game decisions.
-- Support advance one possession, next stoppage, next timeout, halftime, and end-of-game controls.
-- Show active five, bench, position warnings, minutes, fatigue, fouls, timeout state, and possession clearly on mobile.
-- Make all in-game strategy and substitution controls affect future simulation state.
+- Serializable game state, one-possession/next-stoppage stepping, deterministic resume, active-five substitutions, timeouts, and in-game pace/offense/shot/defense/press/rebounding changes are implemented.
+- Advance one possession, next stoppage, halftime, resume/pause, and end-of-game controls are implemented.
+- Future work: next-timeout advancement, position warnings, foul-trouble protection changes, primary scoring options, lineup packages, intentional fouls, hold-for-final-shot, and richer late-game decisions.
 
 ### Phase 6 — Season statistics and game history (aggregation foundation complete)
 
@@ -188,7 +186,7 @@ The current live screen controls playback of a completed deterministic result. F
 1. Add the season state model and deterministic schedule generator.
 2. Add game completion hooks that update records and season aggregates.
 3. Add standings, schedule navigation, and AI-versus-AI day advancement.
-4. Refactor the simulation into resumable possession/decision-window state for interactive live coaching.
+4. Extend the resumable interactive game foundation with richer decision windows and late-game controls.
 5. Add season statistics and history views.
 6. Add progression, recruiting, transfers, coaches, scouting, and dynasty persistence in separate increments.
 

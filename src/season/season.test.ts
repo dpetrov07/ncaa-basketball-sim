@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { teams } from "../data/teams";
-import { createSeasonState, generateSchedule, getNextUserGame, simulateScheduledGame, advanceToNextUserGame } from "./season";
+import { createSeasonState, generateSchedule, getNextUserGame, simulateScheduledGame, advanceOneDay, advanceToNextUserGame } from "./season";
 
 describe("season foundation", () => {
   it("creates a deterministic valid schedule without team conflicts", () => {
@@ -43,5 +43,50 @@ describe("season foundation", () => {
     const activePlayers = Object.values(completed.playerStats).filter((player) => player.gamesPlayed > 0);
     expect(activePlayers.length).toBeGreaterThan(0);
     expect(activePlayers.every((player) => player.points >= 0 && player.minutes >= 0 && player.recentPoints.length <= 5)).toBe(true);
+  });
+
+  it("simulates AI games without skipping the user's game on simulate day", () => {
+    const initial = createSeasonState(teams, teams[0].id, 101);
+    const userGame = initial.schedule.find((game) => game.homeTeamId === initial.userTeamId || game.awayTeamId === initial.userTeamId)!;
+    const state = { ...initial, currentDay: Math.max(1, userGame.day - 1) };
+    const advanced = advanceOneDay(state);
+    const preserved = advanced.schedule.find((game) => game.id === userGame.id)!;
+    expect(preserved.status).toBe("scheduled");
+    expect(advanced.currentDay).toBe(userGame.day);
+    const aiGames = advanced.schedule.filter((game) => game.day <= userGame.day && game.homeTeamId !== state.userTeamId && game.awayTeamId !== state.userTeamId);
+    expect(aiGames.length).toBeGreaterThan(0);
+    expect(aiGames.every((game) => game.status === "completed")).toBe(true);
+    const advancedAgain = advanceOneDay(advanced);
+    expect(advancedAgain.currentDay).toBe(userGame.day);
+    expect(advancedAgain.history).toEqual(advanced.history);
+  });
+
+  it("aggregates starts and every persisted box-score total", () => {
+    const state = createSeasonState(teams, teams[0].id, 303);
+    const game = state.schedule[0];
+    const completed = simulateScheduledGame(state, game.id);
+    const result = completed.schedule.find((candidate) => candidate.id === game.id)!.result!;
+    const starters = new Set([...result.homeStartingLineup, ...result.awayStartingLineup]);
+    for (const box of [result.home, result.away]) for (const player of box.players) {
+      const total = completed.playerStats[player.playerId];
+      expect(total.gamesPlayed).toBe(player.minutes > 0 ? 1 : 0);
+      expect(total.gamesStarted).toBe(starters.has(player.playerId) ? 1 : 0);
+      expect(total.minutes).toBe(player.minutes);
+      expect(total.points).toBe(player.points);
+      expect(total.rebounds).toBe(player.offensiveRebounds + player.defensiveRebounds);
+      expect(total.assists).toBe(player.assists);
+      expect(total.steals).toBe(player.steals);
+      expect(total.blocks).toBe(player.blocks);
+      expect(total.turnovers).toBe(player.turnovers);
+      expect(total.fouls).toBe(player.fouls);
+      expect(total.fgm).toBe(player.fgm);
+      expect(total.fga).toBe(player.fga);
+      expect(total.twoPm).toBe(player.twoPm);
+      expect(total.twoPa).toBe(player.twoPa);
+      expect(total.threePm).toBe(player.threePm);
+      expect(total.threePa).toBe(player.threePa);
+      expect(total.ftm).toBe(player.ftm);
+      expect(total.fta).toBe(player.fta);
+    }
   });
 });

@@ -20,9 +20,9 @@ Open the local URL printed by Vite, usually `http://localhost:5173`.
 3. Set the starting five and rotation size.
 4. Configure pace, offensive identity, shot profile, defensive scheme, pressure, help defense, and rebounding.
 5. Review the pregame matchup.
-6. Run the seeded game, advance through the play-by-play, and inspect the final box score.
+6. Coach the seeded game possession by possession, adjust the active five and strategy at stoppages, use finite timeouts, and inspect the final box score.
 
-The same seed, rosters, lineups, and strategies produce the same game.
+The same seed, rosters, lineups, and strategies produce the same game whether it is simulated automatically, possession by possession, or between stoppages. Running game state is plain serializable data.
 
 ## Project structure
 

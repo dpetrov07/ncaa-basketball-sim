@@ -241,6 +241,8 @@ export interface BoxScore {
 
 export interface GameResult {
   seed: number;
+  homeStartingLineup: string[];
+  awayStartingLineup: string[];
   home: BoxScore;
   away: BoxScore;
   events: GameEvent[];
@@ -257,6 +259,54 @@ export interface SimulationInput {
   homeStrategy: Strategy;
   awayStrategy: Strategy;
   seed: number;
+}
+
+export type GameStoppage =
+  | "game-start"
+  | "possession"
+  | "made-basket"
+  | "foul"
+  | "free-throws"
+  | "turnover"
+  | "halftime"
+  | "period-end"
+  | "timeout"
+  | "final";
+
+export interface GameRuntimePlayer {
+  playerId: string;
+  state: PlayerGameState;
+  stats: PlayerStats;
+  activeSeconds: number;
+}
+
+export interface GameRuntimeTeam {
+  team: Team;
+  strategy: Strategy;
+  players: GameRuntimePlayer[];
+  lineup: string[];
+  possessions: number;
+  score: number;
+  teamFouls: number;
+  timeoutsRemaining: number;
+  stats: TeamStats;
+}
+
+export interface GameState {
+  seed: number;
+  rngState: number;
+  homeStartingLineup: string[];
+  awayStartingLineup: string[];
+  home: GameRuntimeTeam;
+  away: GameRuntimeTeam;
+  possessionTeamId: string;
+  period: number;
+  clock: number;
+  totalSeconds: number;
+  nextEventId: number;
+  events: GameEvent[];
+  status: "playing" | "complete";
+  stoppage: GameStoppage;
 }
 
 export type ScheduledGameStatus = "scheduled" | "completed";

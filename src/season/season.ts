@@ -105,6 +105,8 @@ export function completeSeasonGame(state: SeasonState, gameId: string, result: G
   for (const box of [result.home, result.away]) for (const player of box.players) {
     const season = next.playerStats[player.playerId] ?? emptyPlayerStats(player.playerId);
     if (player.minutes > 0) season.gamesPlayed += 1;
+    const starters = box.team.id === result.home.team.id ? result.homeStartingLineup : result.awayStartingLineup;
+    if (starters?.includes(player.playerId)) season.gamesStarted += 1;
     season.minutes += player.minutes; season.points += player.points; season.rebounds += player.offensiveRebounds + player.defensiveRebounds; season.assists += player.assists; season.steals += player.steals; season.blocks += player.blocks; season.turnovers += player.turnovers; season.fouls += player.fouls; season.fgm += player.fgm; season.fga += player.fga; season.twoPm += player.twoPm; season.twoPa += player.twoPa; season.threePm += player.threePm; season.threePa += player.threePa; season.ftm += player.ftm; season.fta += player.fta; season.plusMinus += player.plusMinus; season.seasonHighPoints = Math.max(season.seasonHighPoints, player.points); season.recentPoints = [...season.recentPoints, player.points].slice(-5); next.playerStats[player.playerId] = season;
   }
   return next;
@@ -122,8 +124,9 @@ export function simulateScheduledGame(state: SeasonState, gameId: string): Seaso
 
 export function advanceOneDay(state: SeasonState): SeasonState {
   let next = copyState(state);
-  const targetDay = Math.min(state.totalDays, state.currentDay + 1);
-  for (const game of state.schedule.filter((candidate) => candidate.status === "scheduled" && candidate.day <= targetDay)) next = simulateScheduledGame(next, game.id);
+  const nextUserGame = getNextUserGame(state);
+  const targetDay = Math.min(state.totalDays, state.currentDay + 1, nextUserGame?.day ?? state.totalDays);
+  for (const game of state.schedule.filter((candidate) => candidate.status === "scheduled" && candidate.day <= targetDay && candidate.homeTeamId !== state.userTeamId && candidate.awayTeamId !== state.userTeamId)) next = simulateScheduledGame(next, game.id);
   next.currentDay = targetDay;
   return next;
 }
