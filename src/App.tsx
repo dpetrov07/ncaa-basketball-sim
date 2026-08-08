@@ -15,6 +15,7 @@ import { GamePlanScreen } from "./ui/screens/GamePlanScreen";
 import { LineupScreen } from "./ui/screens/LineupScreen";
 import { LiveGameScreen } from "./ui/screens/LiveGameScreen";
 import { MoreScreen } from "./ui/screens/MoreScreen";
+import { PlayerProfileScreen } from "./ui/screens/PlayerProfileScreen";
 import { PregameScreen } from "./ui/screens/PregameScreen";
 import { ProgramHome } from "./ui/screens/ProgramHome";
 import { ProgramSelectionScreen } from "./ui/screens/ProgramSelectionScreen";
@@ -25,7 +26,7 @@ import { SeasonScreen } from "./ui/screens/SeasonScreen";
 import { SeasonStatsScreen } from "./ui/screens/SeasonStatsScreen";
 import { StartScreen } from "./ui/screens/StartScreen";
 
-type View = "start" | "coach-create" | "program-select" | "season-intro" | "end-season" | "history" | "stats" | MainView | "pregame" | "live" | "boxscore";
+type View = "start" | "coach-create" | "program-select" | "season-intro" | "end-season" | "history" | "stats" | "player" | MainView | "pregame" | "live" | "boxscore";
 
 const saveRepository = browserSaveRepository(teams);
 const initialLoad = saveRepository?.load() ?? { save: null };
@@ -164,8 +165,8 @@ function App() {
 
   function finishBoxScore() { setView(career?.stage === "season-complete" ? "end-season" : "home"); }
 
-  const careerShell = Boolean(career && season && team && ["home", "season", "roster", "lineup", "gameplan", "more", "pregame", "live", "boxscore", "end-season", "history", "stats"].includes(view));
-  const activeMain: MainView = view === "season" || view === "roster" || view === "gameplan" || view === "more" ? view : view === "lineup" || view === "history" || view === "stats" ? "more" : "home";
+  const careerShell = Boolean(career && season && team && ["home", "season", "roster", "player", "lineup", "gameplan", "more", "pregame", "live", "boxscore", "end-season", "history", "stats"].includes(view));
+  const activeMain: MainView = view === "season" || view === "roster" || view === "gameplan" || view === "more" ? view : view === "player" ? "roster" : view === "lineup" || view === "history" || view === "stats" ? "more" : "home";
 
   if (view === "start") return <StartScreen hasSave={Boolean(career)} loadError={loadError} onNewCareer={() => { setLoadError(undefined); setView("coach-create"); }} onContinue={continueCareer} onDelete={deleteCareer} />;
   if (view === "coach-create") return <div className="onboarding-shell"><CoachCreationScreen onBack={() => setView("start")} onComplete={createCoach} /></div>;
@@ -178,7 +179,8 @@ function App() {
     {view === "home" && opponent && <ProgramHome team={team} opponent={opponent} result={lastResult ?? null} season={season} nextGame={nextUserGame} gameInProgress={career.liveGame?.state.status === "playing"} coach={career.coach} onNavigate={navigateMain} onPregame={prepareForGame} />}
     {view === "home" && !opponent && <EndSeasonScreen career={career} team={team} onViewSeason={() => setView("history")} onViewStats={() => setView("stats")} onMainMenu={() => setView("start")} />}
     {view === "season" && <SeasonScreen state={season} team={team} onAdvanceDay={() => updateSeason(advanceOneDay(season))} onAdvanceNextGame={() => updateSeason(advanceToNextUserGame(season))} onPlayNextGame={prepareForGame} />}
-    {view === "roster" && <RosterScreen team={team} season={season} selectedPlayerId={selectedPlayerId} onSelect={(player: PlayerProfile) => setSelectedPlayerId(player.id)} />}
+    {view === "roster" && <RosterScreen team={team} onSelect={(player: PlayerProfile) => { setSelectedPlayerId(player.id); setView("player"); }} />}
+    {view === "player" && <PlayerProfileScreen player={team.roster.find((player) => player.id === selectedPlayerId) ?? team.roster[0]} team={team} season={season} onBack={() => setView("roster")} />}
     {view === "lineup" && <LineupScreen team={team} lineup={season.userLineup} strategy={season.userStrategy} onToggle={toggleStarter} onReset={resetLineup} onPregame={prepareForGame} />}
     {view === "gameplan" && <GamePlanScreen team={team} strategy={season.userStrategy} onUpdate={updateStrategy} onPregame={prepareForGame} />}
     {view === "more" && <MoreScreen team={team} coach={career.coach} onLineup={() => setView("lineup")} onHistory={() => setView("history")} onStats={() => setView("stats")} onMainMenu={() => setView("start")} />}

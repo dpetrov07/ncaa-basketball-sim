@@ -512,3 +512,206 @@ footer { display: none; }
   .intro-brief, .end-metrics { grid-template-columns: repeat(2, 1fr); }
   .end-metrics > div:nth-child(3), .intro-brief > div:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); }
 }
+
+/* Compact sports-sheet density pass */
+.app-shell { padding-bottom: 68px; }
+.topbar { height: 48px; }
+main { padding-top: 16px; }
+.screen-stack { gap: 13px; }
+.screen-header { min-height: 50px; padding-bottom: 10px; }
+.screen-header h1 { margin: 3px 0; font-size: clamp(24px, 6vw, 28px); }
+.screen-header p { font-size: 11px; }
+.panel-lite { border-radius: 0; }
+.primary-action, .secondary-action, .quiet-action { min-height: 42px; padding: 9px 13px; }
+.team-mark { border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--mark-primary); -webkit-text-stroke: 1px color-mix(in srgb, var(--mark-secondary) 78%, #111); text-shadow: 0 1px 0 color-mix(in srgb, var(--mark-secondary) 60%, transparent); }
+.team-mark span { display: none; }
+.team-mark-sm { width: 27px; height: 27px; font-size: 19px; }
+.team-mark-md { width: 42px; height: 40px; font-size: 30px; }
+.team-mark-lg { width: 52px; height: 50px; font-size: 40px; }
+.player-avatar { border-radius: 2px; object-fit: cover; }
+.avatar-placeholder { display: grid; place-items: center; border: 1px solid var(--line); font-size: 10px; font-weight: 800; letter-spacing: .02em; }
+.bottom-nav { min-height: 58px; padding-top: 6px; padding-bottom: calc(5px + env(safe-area-inset-bottom)); }
+.bottom-nav button { gap: 2px; font-size: 9px; }
+.bottom-nav button svg { width: 17px; height: 17px; }
+
+.program-identity { grid-template-columns: 52px minmax(86px, 1fr) minmax(150px, auto); gap: 9px; padding: 13px 14px 12px; }
+.program-name span { font-size: 9px; }
+.program-name { min-width: 0; }
+.program-name h1 { margin: 1px 0; font-size: 22px; }
+.program-name h1, .program-name p, .program-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.program-name p { font-size: 10px; }
+.record-summary > div { min-width: 50px; gap: 2px; padding: 0 6px; }
+.record-summary span { font-size: 8px; }
+.record-summary b { font-size: 19px; }
+.home-section { padding: 12px 14px; }
+.home-section-title { min-height: 18px; margin-bottom: 8px; }
+.home-section-title > span { gap: 6px; font-size: 13px; }
+.home-section-title > span svg { width: 15px; height: 15px; }
+.home-section-title small { gap: 4px; font-size: 10px; }
+.home-section-title small svg { width: 12px; height: 12px; }
+.matchup-teams { grid-template-columns: 1fr 34px 1fr; gap: 7px; padding: 0 5px 9px; }
+.matchup-teams > div { gap: 8px; }
+.matchup-teams b { font-size: 11px; }
+.matchup-teams strong { font-size: 18px; }
+.matchup-teams small { font-size: 10px; }
+.matchup-teams > i { width: 34px; height: 34px; border-width: 1px; font-size: 10px; }
+.scouting-ribbon { grid-template-columns: repeat(3, 1fr); }
+.scouting-ribbon span { min-height: 34px; gap: 4px; padding: 3px 5px; font-size: 9px; line-height: 1.15; }
+.scouting-ribbon span svg { flex: 0 0 auto; width: 12px; height: 12px; }
+.matchup-actions { gap: 8px; padding-top: 8px; }
+.matchup-actions button { min-height: 40px; font-size: 12px; }
+.last-game { padding-block: 10px; }
+.last-game .home-section-title { margin-bottom: 5px; }
+.last-score { gap: 12px; }
+.last-score > div { gap: 7px; }
+.last-score span { font-size: 11px; }
+.last-score b { font-size: 22px; }
+.last-score > strong { font-size: 15px; }
+.result-leaders { margin-top: 7px; font-size: 10px; }
+.result-leaders i { margin-inline: 5px; }
+.home-section:has(.home-starters) .home-section-title { margin-bottom: 5px; }
+.home-starters button { min-height: 43px; grid-template-columns: 22px 36px minmax(0, 1fr) 25px 30px 70px; gap: 6px; padding: 3px 4px; }
+.home-starters b { font-size: 12px; }
+.home-starters small { font-size: 10px; }
+.home-starters strong { font-size: 14px; }
+.home-starters button > i { height: 4px; }
+.team-snapshot .home-section-title { margin-bottom: 9px; }
+.team-snapshot > div:last-child span { gap: 4px; font-size: 8px; }
+.team-snapshot b { font-size: 17px; }
+.rotation-note { min-height: 43px; grid-template-columns: auto auto minmax(0, 1fr); gap: 7px; padding: 9px 14px; }
+.rotation-note svg { width: 16px; height: 16px; }
+.rotation-note b { font-size: 10px; white-space: nowrap; }
+.rotation-note p { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+
+.roster-columns { display: grid; grid-template-columns: 70px minmax(0, 1fr) 30px 35px; gap: 7px; padding: 0 5px 5px; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .06em; }
+.roster-columns span:nth-child(3), .roster-columns span:nth-child(4) { text-align: right; }
+.player-row { min-height: 49px; grid-template-columns: 22px 38px minmax(0, 1fr) 27px 36px 58px; gap: 7px; padding: 5px 3px; }
+.player-position { color: var(--muted); font-size: 10px; text-align: right; }
+.player-row-copy strong { font-size: 12px; }
+.player-row-copy span { font-size: 9px; }
+.player-row-ratings b { font-size: 15px; }
+.player-row-detail { font-size: 7px; }
+.starter-row { grid-template-columns: 20px minmax(0, 1fr) 18px; }
+.starter-row .player-row { grid-template-columns: 22px 38px minmax(0, 1fr) 27px 36px 58px; }
+.player-detail { padding: 4px 0 0; border: 0; }
+.detail-identity { gap: 10px; }
+.detail-identity h2 { margin: 2px 0; font-size: 21px; }
+.detail-identity p { font-size: 10px; }
+.detail-overall { font-size: 25px; }
+.trait-row { margin-top: 6px; }
+.player-season-line { margin: 10px 0 0; padding: 8px 0; }
+.player-season-line b { font-size: 14px; }
+.rating-sections { gap: 13px 20px; padding-top: 10px; }
+.rating-section h3 { margin-bottom: 4px; font-size: 10px; }
+.rating-row { min-height: 21px; }
+.detail-footer { margin-top: 10px; padding-top: 8px; }
+
+.game-plan-screen .screen-header { min-height: 45px; }
+.plan-group { gap: 4px; }
+.plan-form { display: block; padding: 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+.plan-field { min-height: 43px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, auto); align-items: center; gap: 10px; border-bottom: 1px solid var(--line); font-size: 11px; }
+.plan-field select { height: 41px; border: 0; padding: 0 4px; background: transparent; color: var(--team-primary); font-size: 11px; font-weight: 650; text-align: right; text-align-last: right; }
+.range-field { min-height: 43px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(105px, 38%); align-items: center; gap: 10px; border-bottom: 1px solid var(--line); font-size: 10px; }
+.range-field span { gap: 8px; }
+.range-field input { margin: 0; }
+.switch-field { min-height: 45px; padding: 5px 0; border-top: 0; border-bottom: 1px solid var(--line); }
+.switch-field small { font-size: 9px; }
+.game-plan-screen > .primary-action { margin-top: 2px; }
+
+.pregame-score, .final-score { padding: 11px 7px; border-left: 0; border-right: 0; }
+.pregame-team { gap: 2px; }
+.pregame-team strong { font-size: 15px; }
+.pregame-starters > div { min-height: 43px; padding-block: 3px; }
+.matchup-read { gap: 8px; }
+.read-points span { padding: 5px 7px; }
+.seed-launch { padding-top: 0; }
+.live-screen .screen-header { min-height: 44px; padding-bottom: 7px; }
+.live-score { display: block; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.live-score > .live-score-main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 7px 4px 5px; text-align: initial; }
+.live-score-main > div { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px; }
+.live-score-main > div:last-child { grid-template-columns: 1fr auto; text-align: right; }
+.live-score-main strong { grid-column: 2; font-size: 27px; }
+.live-score-main > div:last-child strong { grid-column: 1; grid-row: 1; }
+.live-score-main span { font-size: 11px; font-weight: 700; }
+.live-score-main aside { display: grid; justify-items: center; gap: 1px; padding-inline: 8px; }
+.live-score-main aside b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.live-score-main aside span { color: var(--muted); font-size: 8px; font-weight: 700; }
+.live-score > .live-game-meta { display: flex; grid-template-columns: none; justify-content: center; gap: 22px; padding: 4px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .05em; text-align: initial; }
+.live-tabs button, .season-tabs button { padding: 8px 9px; font-size: 9px; text-transform: uppercase; }
+.live-feed-item { padding-block: 7px; }
+.live-controls { bottom: 58px; padding: 6px; }
+.speed-button { min-height: 34px; }
+.live-player { padding-block: 5px; }
+.live-stat-grid > div { padding-block: 8px; }
+
+.season-summary > div { padding: 8px; }
+.season-summary strong { font-size: 15px; }
+.next-game { padding: 11px; }
+.next-game-main { padding: 10px 0; }
+.next-game-main h2 { font-size: 18px; }
+.season-actions { gap: 6px; padding-top: 8px; }
+.schedule-row { min-height: 43px; padding-block: 5px; }
+.standing-row { min-height: 42px; padding-block: 5px; }
+.season-leaders > div { min-height: 46px; padding-block: 5px; }
+.box-table-head, .box-row { min-width: 670px; }
+.box-row { min-height: 41px; padding-block: 4px; }
+.team-summary { padding-block: 6px; }
+.more-profile { padding: 10px 0; }
+.more-list button { min-height: 52px; padding-block: 9px; }
+.coach-builder { gap: 12px; padding: 12px; }
+.coach-preview { padding: 5px 6px 12px; }
+.coach-preview .player-avatar { width: 88px !important; height: 88px !important; }
+.coach-preview h2 { font-size: 19px; }
+.coach-form { gap: 9px; }
+.coach-form input, .coach-form select { min-height: 40px; padding: 8px; }
+.appearance-grid { padding-top: 9px; }
+.job-list > button { min-height: 52px; padding-block: 6px; }
+.job-detail { gap: 10px; padding: 12px; }
+.season-intro-hero, .end-hero { padding: 12px; }
+.intro-players > div, .end-leaders > div { min-height: 45px; padding-block: 4px; }
+.objective-callout, .objective-result { padding: 10px; }
+
+@media (max-width: 700px) {
+  .app-shell { padding-inline: 14px; }
+  .program-home { margin-inline: -14px; }
+  .program-identity { grid-template-columns: 48px minmax(82px, 1fr) minmax(148px, auto); padding: 12px 14px 11px; }
+  .program-identity > .team-mark { width: 48px; height: 47px; font-size: 37px; }
+  .record-summary { grid-column: auto; margin-top: 0; padding-top: 0; border-top: 0; }
+  .record-summary > div { min-width: 0; padding-inline: 5px; }
+  .matchup-teams > div { display: flex; justify-items: initial; text-align: left; }
+  .matchup-teams > div:last-child { justify-content: flex-end; }
+  .matchup-teams > div > span { justify-items: initial; }
+  .scouting-ribbon { grid-template-columns: repeat(3, 1fr); }
+  .scouting-ribbon span { justify-content: center; }
+  .scouting-ribbon span + span { border-top: 0; border-left: 1px solid var(--line); }
+  .last-score { grid-template-columns: 1fr 1fr auto; }
+  .last-score > strong { grid-column: auto; grid-row: auto; }
+  .team-snapshot > div:last-child { grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .team-snapshot > div:last-child span:nth-child(3) { border-left: 1px solid var(--line); }
+  .rotation-note { grid-template-columns: auto auto minmax(0, 1fr); }
+  .rotation-note p { grid-column: auto; }
+  .detail-identity { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .detail-overall { grid-column: auto; text-align: right; }
+  .player-row, .starter-row .player-row { grid-template-columns: 22px 38px minmax(0, 1fr) 27px 36px; }
+  .player-row-detail { display: none; }
+}
+
+@media (max-width: 390px) {
+  .program-identity { grid-template-columns: 43px minmax(74px, 1fr) minmax(137px, auto); gap: 6px; padding-inline: 11px; }
+  .program-identity > .team-mark { width: 43px; height: 44px; font-size: 34px; }
+  .program-name h1 { font-size: 20px; }
+  .record-summary > div { padding-inline: 4px; }
+  .record-summary span { font-size: 7px; }
+  .record-summary b { font-size: 17px; }
+  .home-section { padding-inline: 11px; }
+  .home-section-title small { font-size: 9px; }
+  .matchup-teams { padding-inline: 0; }
+  .matchup-teams > div { gap: 5px; }
+  .matchup-teams strong { font-size: 16px; }
+  .scouting-ribbon span { padding-inline: 2px; font-size: 8px; }
+  .home-starters button { grid-template-columns: 19px 34px minmax(0, 1fr) 23px 28px 55px; gap: 5px; }
+  .home-starters .player-avatar { width: 34px !important; height: 34px !important; }
+  .home-starters b { font-size: 11px; }
+  .player-row-copy span { max-width: 150px; }
+  .live-tabs button { padding-inline: 6px; font-size: 8px; }
+}
