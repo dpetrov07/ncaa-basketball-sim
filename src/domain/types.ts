@@ -78,8 +78,25 @@ export interface PlayerProfile {
   classYear: ClassYear;
   archetype: Archetype;
   personality: Personality;
+  /** Traits the player-facing scouting layer is allowed to reveal. */
+  knownTraits?: HiddenTrait[];
+  /** Engine-only traits. These are never presentation data. */
   hiddenTraits: HiddenTrait[];
   ratings: PlayerRatings;
+}
+
+export type ProgramTier = "elite" | "strong" | "middle" | "rebuilding" | "underdog";
+
+export interface ProgramProfile {
+  tier: ProgramTier;
+  prestige: number;
+  expectations: string;
+  facilities: number;
+  developmentReputation: number;
+  recruitingReach: number;
+  historicalReputation: number;
+  homeCourtStrength: number;
+  identity: "balanced" | "shooting" | "defense" | "rebounding" | "athleticism" | "development";
 }
 
 export interface PlayerGameState {
@@ -102,6 +119,7 @@ export interface Team {
   conference: string;
   colors: [string, string];
   logo: string;
+  program: ProgramProfile;
   coach: Coach;
   roster: PlayerProfile[];
 }
@@ -230,6 +248,7 @@ export interface GameEvent {
   points?: number;
   shotType?: "layup" | "dunk" | "mid-range" | "three" | "post";
   result?: "made" | "missed" | "blocked";
+  foulType?: "offensive" | "defensive-non-shooting" | "shooting" | "intentional" | "bonus";
   text: string;
 }
 
@@ -258,6 +277,9 @@ export interface SimulationInput {
   awayLineup: Lineup;
   homeStrategy: Strategy;
   awayStrategy: Strategy;
+  homeCoach?: Coach;
+  awayCoach?: Coach;
+  neutralSite?: boolean;
   seed: number;
 }
 
@@ -282,6 +304,7 @@ export interface GameRuntimePlayer {
 
 export interface GameRuntimeTeam {
   team: Team;
+  coach: Coach;
   strategy: Strategy;
   players: GameRuntimePlayer[];
   lineup: string[];
@@ -299,7 +322,11 @@ export interface GameState {
   awayStartingLineup: string[];
   home: GameRuntimeTeam;
   away: GameRuntimeTeam;
+  neutralSite: boolean;
+  openingPossessionTeamId: string;
   possessionTeamId: string;
+  /** Set after an offensive rebound so a second-chance action is not counted as a new possession. */
+  continuationTeamId?: string;
   period: number;
   clock: number;
   totalSeconds: number;
@@ -318,6 +345,7 @@ export interface ScheduledGame {
   homeTeamId: string;
   awayTeamId: string;
   conferenceGame: boolean;
+  neutralSite?: boolean;
   seed: number;
   status: ScheduledGameStatus;
   result?: GameResult;

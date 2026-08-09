@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { teams } from "../data/teams";
-import { createSeasonState, generateSchedule, getNextUserGame, simulateScheduledGame, advanceOneDay, advanceToNextUserGame } from "./season";
+import { createSeasonState, generateSchedule, getNextUserGame, simulateScheduledGame, advanceOneDay, advanceToNextUserGame, validateSchedule } from "./season";
 
 describe("season foundation", () => {
   it("creates a deterministic valid schedule without team conflicts", () => {
@@ -17,6 +17,25 @@ describe("season foundation", () => {
     }
     expect(first.some((game) => game.conferenceGame)).toBe(true);
     expect(first.some((game) => !game.conferenceGame)).toBe(true);
+    const counts = new Map(teams.map((team) => [team.id, 0]));
+    for (const game of first) {
+      counts.set(game.homeTeamId, counts.get(game.homeTeamId)! + 1);
+      counts.set(game.awayTeamId, counts.get(game.awayTeamId)! + 1);
+      const home = teams.find((team) => team.id === game.homeTeamId)!;
+      const away = teams.find((team) => team.id === game.awayTeamId)!;
+      expect(game.conferenceGame).toBe(home.conference === away.conference);
+    }
+    expect(new Set(counts.values())).toEqual(new Set([12]));
+    expect(new Set(first.map((game) => game.id)).size).toBe(first.length);
+  });
+
+  it("rejects invalid schedule references, self-games, duplicates, and imbalanced totals", () => {
+    const valid = generateSchedule(teams, 2027);
+    expect(() => validateSchedule(valid, teams, 12)).not.toThrow();
+    expect(() => validateSchedule([{ ...valid[0], awayTeamId: valid[0].homeTeamId }], teams)).toThrow(/itself/);
+    expect(() => validateSchedule([{ ...valid[0], homeTeamId: "missing" }], teams)).toThrow(/unknown/);
+    expect(() => validateSchedule([valid[0], { ...valid[0] }], teams)).toThrow(/Duplicate/);
+    expect(() => validateSchedule(valid.slice(1), teams, 12)).toThrow(/Every team/);
   });
 
   it("advances AI games and never processes a completed game twice", () => {

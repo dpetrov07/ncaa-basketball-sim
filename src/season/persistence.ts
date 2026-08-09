@@ -53,7 +53,8 @@ function saveRuntime(runtime: GameRuntimeTeam): SavedRuntimeTeam {
 
 function loadRuntime(runtime: SavedRuntimeTeam, database: Team[]): GameRuntimeTeam {
   const { teamId, ...mutable } = runtime;
-  return { ...mutable, team: teamById(database, teamId) };
+  const team = teamById(database, teamId);
+  return { ...mutable, coach: mutable.coach ?? team.coach, team };
 }
 
 export function serializeCareer(career: CareerSave): string {
@@ -80,7 +81,7 @@ export function deserializeCareer(raw: string, database: Team[]): CareerSave {
     schedule: payload.season.schedule.map((game) => ({ ...game, result: game.result ? loadResult(game.result, database) : undefined })),
   } as SeasonState : undefined;
   if (season && (!Array.isArray(season.schedule) || !season.records || !season.playerStats || season.userTeamId !== payload.programId)) throw new Error("Save season data is invalid.");
-  const liveGame = payload.liveGame ? { gameId: payload.liveGame.gameId, state: { ...payload.liveGame.state, home: loadRuntime(payload.liveGame.state.home, database), away: loadRuntime(payload.liveGame.state.away, database) } } : undefined;
+  const liveGame = payload.liveGame ? { gameId: payload.liveGame.gameId, state: { ...payload.liveGame.state, neutralSite: payload.liveGame.state.neutralSite ?? false, openingPossessionTeamId: payload.liveGame.state.openingPossessionTeamId ?? payload.liveGame.state.possessionTeamId, home: loadRuntime(payload.liveGame.state.home, database), away: loadRuntime(payload.liveGame.state.away, database) } } : undefined;
   if (payload.stage !== "program-selection" && (!payload.programId || !season)) throw new Error("Career is missing its selected program or season.");
   if (liveGame && (!season?.schedule.some((game) => game.id === liveGame.gameId) || (liveGame.state.home.team.id !== payload.programId && liveGame.state.away.team.id !== payload.programId))) throw new Error("Live game data is invalid.");
   return { ...payload, schemaVersion: 2, season, liveGame } as CareerSave;

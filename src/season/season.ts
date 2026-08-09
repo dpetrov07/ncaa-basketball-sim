@@ -43,19 +43,45 @@ export function generateSchedule(teams: Team[], seed: number): ScheduledGame[] {
       }
     }
   }
-  const crossConferencePairs = teams.flatMap((team, index) => teams.slice(index + 1).filter((opponent) => opponent.conference !== team.conference).map((opponent) => ({ team, opponent, score: hash(`${seed}:${team.id}:${opponent.id}`) })));
-  crossConferencePairs.sort((a, b) => a.score - b.score);
-  const nonConferenceCount = new Map(teams.map((team) => [team.id, 0]));
-  for (const pair of crossConferencePairs) {
-    const firstCount = nonConferenceCount.get(pair.team.id) ?? 0;
-    const secondCount = nonConferenceCount.get(pair.opponent.id) ?? 0;
-    if (firstCount >= 4 || secondCount >= 4) continue;
-    if (pair.score % 3 !== 0 && firstCount >= 2 && secondCount >= 2) continue;
-    nonConferenceCount.set(pair.team.id, firstCount + 1); nonConferenceCount.set(pair.opponent.id, secondCount + 1);
-    const homeFirst = pair.score % 2 === 0;
-    games.push(addGameToCalendar(calendar, { day: 1 + (ordinal % 7), homeTeamId: homeFirst ? pair.team.id : pair.opponent.id, awayTeamId: homeFirst ? pair.opponent.id : pair.team.id, conferenceGame: false }, ordinal++, seed));
+  const conferenceGroups = [...byConference.values()];
+  if (conferenceGroups.length % 2 !== 0 || conferenceGroups.some((group) => group.length !== conferenceGroups[0]?.length)) throw new Error("Balanced scheduling requires an even number of equally sized conferences.");
+  const addMatching = (first: Team[], second: Team[], offset: number) => {
+    for (let index = 0; index < first.length; index += 1) {
+      const opponent = second[(index + offset) % second.length];
+      const homeFirst = hash(`${seed}:home:${first[index].id}:${opponent.id}`) % 2 === 0;
+      games.push(addGameToCalendar(calendar, { day: 1 + (ordinal % 7), homeTeamId: homeFirst ? first[index].id : opponent.id, awayTeamId: homeFirst ? opponent.id : first[index].id, conferenceGame: false }, ordinal++, seed));
+    }
+  };
+  for (let firstIndex = 0; firstIndex < conferenceGroups.length; firstIndex += 1) {
+    for (let secondIndex = firstIndex + 1; secondIndex < conferenceGroups.length; secondIndex += 1) {
+      const offset = hash(`${seed}:matching:${firstIndex}:${secondIndex}`) % conferenceGroups[firstIndex].length;
+      addMatching(conferenceGroups[firstIndex], conferenceGroups[secondIndex], offset);
+      if (secondIndex === firstIndex + 1 && firstIndex % 2 === 0) addMatching(conferenceGroups[firstIndex], conferenceGroups[secondIndex], (offset + 1) % conferenceGroups[firstIndex].length);
+    }
   }
-  return games.sort((a, b) => a.day - b.day || a.id.localeCompare(b.id));
+  const schedule = games.sort((a, b) => a.day - b.day || a.id.localeCompare(b.id));
+  validateSchedule(schedule, teams, 12);
+  return schedule;
+}
+
+export function validateSchedule(schedule: ScheduledGame[], teams: Team[], expectedGamesPerTeam?: number): void {
+  const teamIds = new Set(teams.map((team) => team.id));
+  const gameIds = new Set<string>();
+  const counts = new Map(teams.map((team) => [team.id, 0]));
+  const calendar = new Set<string>();
+  for (const game of schedule) {
+    if (gameIds.has(game.id)) throw new Error(`Duplicate scheduled game ID ${game.id}.`);
+    if (!teamIds.has(game.homeTeamId) || !teamIds.has(game.awayTeamId)) throw new Error("Schedule references an unknown team.");
+    if (game.homeTeamId === game.awayTeamId) throw new Error("A team cannot play itself.");
+    for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+      const calendarKey = `${game.day}:${teamId}`;
+      if (calendar.has(calendarKey)) throw new Error(`${teamId} is scheduled twice on day ${game.day}.`);
+      calendar.add(calendarKey);
+      counts.set(teamId, (counts.get(teamId) ?? 0) + 1);
+    }
+    gameIds.add(game.id);
+  }
+  if (expectedGamesPerTeam && [...counts.values()].some((count) => count !== expectedGamesPerTeam)) throw new Error(`Every team must play ${expectedGamesPerTeam} games.`);
 }
 
 export function createSeasonState(teams: Team[], userTeamId: string, seed = 20260730): SeasonState {
@@ -88,7 +114,15 @@ export function getStandings(state: SeasonState, conference?: string): TeamSeaso
 
 export function teamStrategy(team: Team): Strategy {
   const style = team.coach.style;
-  return { ...defaultStrategy, pace: style === "Fast-Paced Innovator" ? "fast" : style === "Defensive Traditionalist" ? "slow" : "balanced", offensiveStyle: style === "Analytics Coach" ? "three-point" : style === "Player Developer" ? "motion" : "balanced", defensiveScheme: style === "Defensive Traditionalist" ? "conservative" : "man", pressFrequency: style === "Motivator" ? 34 : defaultStrategy.pressFrequency };
+  const identity = team.program.identity;
+  return {
+    ...defaultStrategy,
+    pace: style === "Fast-Paced Innovator" ? "fast" : style === "Defensive Traditionalist" ? "slow" : identity === "athleticism" ? "fast" : "balanced",
+    offensiveStyle: style === "Analytics Coach" || identity === "shooting" ? "three-point" : style === "Player Developer" ? "motion" : identity === "rebounding" ? "inside-out" : "balanced",
+    shotEmphasis: identity === "shooting" ? "three" : identity === "rebounding" ? "post" : "rim",
+    defensiveScheme: style === "Defensive Traditionalist" ? "conservative" : identity === "defense" ? "aggressive-help" : "man",
+    pressFrequency: style === "Motivator" ? 34 : identity === "athleticism" ? 30 : defaultStrategy.pressFrequency,
+  };
 }
 
 export function completeSeasonGame(state: SeasonState, gameId: string, result: GameResult): SeasonState {
@@ -124,7 +158,7 @@ export function simulateScheduledGame(state: SeasonState, gameId: string): Seaso
   const home = state.teams.find((team) => team.id === scheduled.homeTeamId);
   const away = state.teams.find((team) => team.id === scheduled.awayTeamId);
   if (!home || !away) return state;
-  const result = simulateGame({ home, away, homeLineup: { playerIds: defaultLineup(home) }, awayLineup: { playerIds: defaultLineup(away) }, homeStrategy: teamStrategy(home), awayStrategy: teamStrategy(away), seed: scheduled.seed });
+  const result = simulateGame({ home, away, homeLineup: { playerIds: defaultLineup(home) }, awayLineup: { playerIds: defaultLineup(away) }, homeStrategy: teamStrategy(home), awayStrategy: teamStrategy(away), homeCoach: home.coach, awayCoach: away.coach, neutralSite: scheduled.neutralSite, seed: scheduled.seed });
   return completeSeasonGame(state, gameId, result);
 }
 

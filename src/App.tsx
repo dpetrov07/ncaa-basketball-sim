@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { CareerSave, GameResult, GameState, PlayerProfile, SeasonState, Strategy, UserCoach } from "./domain/types";
 import { defaultLineup, teams } from "./data/teams";
-import { acceptProgram, createCareer, settleCareerStage, startSeason } from "./career/career";
+import { acceptProgram, createCareer, settleCareerStage, startSeason, userCoachToGameCoach } from "./career/career";
 import { finalizeGame, initializeGame } from "./simulation/simulateGame";
 import { advanceOneDay, advanceToNextUserGame, completeSeasonGame, getNextUserGame, teamStrategy } from "./season/season";
 import { browserSaveRepository } from "./season/persistence";
@@ -139,7 +139,8 @@ function App() {
       const userIsHome = home.id === team.id;
       const opponentTeam = userIsHome ? away : home;
       const opponentStrategy = teamStrategy(opponentTeam);
-      const running = initializeGame({ home, away, homeLineup: { playerIds: userIsHome ? preparedSeason.userLineup : defaultLineup(home) }, awayLineup: { playerIds: userIsHome ? defaultLineup(away) : preparedSeason.userLineup }, homeStrategy: userIsHome ? preparedSeason.userStrategy : opponentStrategy, awayStrategy: userIsHome ? opponentStrategy : preparedSeason.userStrategy, seed: scheduled.seed });
+      const userCoach = userCoachToGameCoach(career.coach);
+      const running = initializeGame({ home, away, homeLineup: { playerIds: userIsHome ? preparedSeason.userLineup : defaultLineup(home) }, awayLineup: { playerIds: userIsHome ? defaultLineup(away) : preparedSeason.userLineup }, homeStrategy: userIsHome ? preparedSeason.userStrategy : opponentStrategy, awayStrategy: userIsHome ? opponentStrategy : preparedSeason.userStrategy, homeCoach: userIsHome ? userCoach : home.coach, awayCoach: userIsHome ? away.coach : userCoach, neutralSite: scheduled.neutralSite, seed: scheduled.seed });
       store({ ...career, season: preparedSeason, liveGame: { gameId: scheduled.id, state: running } });
       setBoxResult(null); setError(null); setView("live");
     } catch (caught) { setError(caught instanceof Error ? caught.message : "The game could not be started."); }

@@ -7,6 +7,7 @@ import type {
   PlayerProfile,
   PlayerRatings,
   Position,
+  ProgramProfile,
   Team,
 } from "../domain/types";
 
@@ -32,6 +33,37 @@ const teamSeeds = [
   ["Harbor Point", "Harbor Point", "HPT", "Tides", "#48cae4", "#03045e"],
   ["Evergreen Polytechnic", "Evergreen", "EVP", "Pioneers", "#52b788", "#081c15"],
 ] as const;
+
+interface ProgramBlueprint {
+  profile: ProgramProfile;
+  quality: number;
+  depth: number;
+  potentialBonus: number;
+  starBoost: number;
+}
+
+const programBlueprints: ProgramBlueprint[] = [
+  { profile: { tier: "elite", prestige: 5, expectations: "Conference championship contender", facilities: 5, developmentReputation: 4, recruitingReach: 5, historicalReputation: 5, homeCourtStrength: 5, identity: "shooting" }, quality: 7, depth: 2, potentialBonus: 1, starBoost: 2 },
+  { profile: { tier: "strong", prestige: 4, expectations: "Top-three conference finish", facilities: 4, developmentReputation: 3, recruitingReach: 4, historicalReputation: 4, homeCourtStrength: 4, identity: "athleticism" }, quality: 4, depth: 1, potentialBonus: 1, starBoost: 2 },
+  { profile: { tier: "middle", prestige: 3, expectations: "Finish above .500", facilities: 3, developmentReputation: 3, recruitingReach: 3, historicalReputation: 3, homeCourtStrength: 3, identity: "balanced" }, quality: 0, depth: 0, potentialBonus: 2, starBoost: 2 },
+  { profile: { tier: "underdog", prestige: 1, expectations: "Avoid the conference cellar", facilities: 1, developmentReputation: 3, recruitingReach: 1, historicalReputation: 1, homeCourtStrength: 3, identity: "shooting" }, quality: -7, depth: -3, potentialBonus: 5, starBoost: 9 },
+  { profile: { tier: "elite", prestige: 5, expectations: "Conference championship contender", facilities: 5, developmentReputation: 5, recruitingReach: 5, historicalReputation: 4, homeCourtStrength: 5, identity: "defense" }, quality: 7, depth: 3, potentialBonus: 2, starBoost: 3 },
+  { profile: { tier: "rebuilding", prestige: 2, expectations: "Show measurable progress", facilities: 2, developmentReputation: 4, recruitingReach: 2, historicalReputation: 2, homeCourtStrength: 3, identity: "development" }, quality: -4, depth: -3, potentialBonus: 7, starBoost: 4 },
+  { profile: { tier: "middle", prestige: 3, expectations: "Compete for a top-half finish", facilities: 3, developmentReputation: 2, recruitingReach: 3, historicalReputation: 3, homeCourtStrength: 4, identity: "rebounding" }, quality: 0, depth: 1, potentialBonus: 1, starBoost: 2 },
+  { profile: { tier: "strong", prestige: 4, expectations: "Top-three conference finish", facilities: 4, developmentReputation: 4, recruitingReach: 4, historicalReputation: 3, homeCourtStrength: 4, identity: "defense" }, quality: 4, depth: 1, potentialBonus: 2, starBoost: 2 },
+  { profile: { tier: "underdog", prestige: 1, expectations: "Avoid the conference cellar", facilities: 2, developmentReputation: 2, recruitingReach: 1, historicalReputation: 1, homeCourtStrength: 2, identity: "shooting" }, quality: -6, depth: -4, potentialBonus: 4, starBoost: 8 },
+  { profile: { tier: "middle", prestige: 3, expectations: "Finish above .500", facilities: 3, developmentReputation: 4, recruitingReach: 3, historicalReputation: 2, homeCourtStrength: 3, identity: "development" }, quality: -1, depth: 0, potentialBonus: 6, starBoost: 3 },
+  { profile: { tier: "elite", prestige: 5, expectations: "Conference championship contender", facilities: 5, developmentReputation: 4, recruitingReach: 5, historicalReputation: 5, homeCourtStrength: 5, identity: "shooting" }, quality: 6, depth: 3, potentialBonus: 2, starBoost: 4 },
+  { profile: { tier: "strong", prestige: 4, expectations: "Top-three conference finish", facilities: 4, developmentReputation: 3, recruitingReach: 4, historicalReputation: 4, homeCourtStrength: 4, identity: "rebounding" }, quality: 4, depth: 2, potentialBonus: 1, starBoost: 2 },
+  { profile: { tier: "middle", prestige: 3, expectations: "Finish above .500", facilities: 3, developmentReputation: 3, recruitingReach: 3, historicalReputation: 3, homeCourtStrength: 3, identity: "athleticism" }, quality: 0, depth: 0, potentialBonus: 2, starBoost: 3 },
+  { profile: { tier: "rebuilding", prestige: 2, expectations: "Develop a young core", facilities: 3, developmentReputation: 5, recruitingReach: 2, historicalReputation: 2, homeCourtStrength: 2, identity: "development" }, quality: -4, depth: -3, potentialBonus: 8, starBoost: 3 },
+  { profile: { tier: "strong", prestige: 4, expectations: "Top-three conference finish", facilities: 4, developmentReputation: 3, recruitingReach: 4, historicalReputation: 4, homeCourtStrength: 4, identity: "defense" }, quality: 3, depth: 2, potentialBonus: 2, starBoost: 3 },
+  { profile: { tier: "middle", prestige: 3, expectations: "Compete for a top-half finish", facilities: 3, developmentReputation: 2, recruitingReach: 3, historicalReputation: 3, homeCourtStrength: 4, identity: "defense" }, quality: -1, depth: 0, potentialBonus: 1, starBoost: 3 },
+  { profile: { tier: "rebuilding", prestige: 2, expectations: "Show measurable progress", facilities: 2, developmentReputation: 4, recruitingReach: 2, historicalReputation: 2, homeCourtStrength: 3, identity: "development" }, quality: -5, depth: -3, potentialBonus: 8, starBoost: 4 },
+  { profile: { tier: "strong", prestige: 4, expectations: "Top-three conference finish", facilities: 4, developmentReputation: 3, recruitingReach: 4, historicalReputation: 3, homeCourtStrength: 4, identity: "athleticism" }, quality: 3, depth: 1, potentialBonus: 3, starBoost: 4 },
+  { profile: { tier: "middle", prestige: 3, expectations: "Finish above .500", facilities: 3, developmentReputation: 3, recruitingReach: 3, historicalReputation: 2, homeCourtStrength: 4, identity: "shooting" }, quality: 0, depth: -1, potentialBonus: 2, starBoost: 4 },
+  { profile: { tier: "underdog", prestige: 1, expectations: "Avoid the conference cellar", facilities: 2, developmentReputation: 4, recruitingReach: 1, historicalReputation: 1, homeCourtStrength: 3, identity: "development" }, quality: -6, depth: -4, potentialBonus: 7, starBoost: 8 },
+];
 
 const firstNames = [
   "Jordan", "Marcus", "Eli", "Theo", "Darius", "Mason", "Andre", "Kai", "Caleb", "Nico",
@@ -59,13 +91,15 @@ function rating(base: number, index: number, offset: number): number {
   return clamp(base + ((index * 7 + offset * 11) % 17) - 8);
 }
 
-function makeRatings(seed: number, index: number, position: Position, archetype: Archetype): PlayerRatings {
-  const base = 63 + ((seed * 13 + index * 5) % 19);
+function makeRatings(seed: number, index: number, position: Position, archetype: Archetype, classYear: ClassYear, program: ProgramBlueprint): PlayerRatings {
+  const identity = program.profile.identity;
+  const rotationAdjustment = index >= 8 ? program.depth : 0;
+  const base = 63 + ((seed * 13 + index * 5) % 19) + program.quality + rotationAdjustment + (index === 0 ? program.starBoost : 0);
   const guard = position === "PG" || position === "SG";
   const big = position === "PF" || position === "C";
   const profileBonus = archetype.includes("Three") ? 8 : archetype.includes("Rim") || archetype.includes("Interior") ? 7 : 0;
-  const insideScoring = rating(base + (big ? 8 : 0) + profileBonus, index, 1);
-  const threePoint = rating(base + (guard ? 5 : 0) + (archetype.includes("Three") ? 9 : 0), index, 2);
+  const insideScoring = rating(base + (big ? 8 : 0) + profileBonus + (identity === "athleticism" ? 3 : 0), index, 1);
+  const threePoint = rating(base + (guard ? 5 : 0) + (archetype.includes("Three") ? 9 : 0) + (identity === "shooting" ? 6 : 0), index, 2);
   const passing = rating(base + (position === "PG" ? 10 : archetype.includes("Point") ? 7 : 0), index, 3);
   const strength = rating(base + (big ? 11 : 0), index, 4);
   const athleticism = rating(base + (archetype.includes("Slashing") ? 8 : 0), index, 5);
@@ -78,22 +112,22 @@ function makeRatings(seed: number, index: number, position: Position, archetype:
     freeThrow: rating(base + (guard ? 4 : 0), index, 9),
     passing,
     ballHandling: rating(base + (guard ? 10 : archetype.includes("Point") ? 5 : -2), index, 10),
-    offensiveRebounding: rating(base + (big ? 12 : -3), index, 11),
-    defensiveRebounding: rating(base + (big ? 14 : 0), index, 12),
-    perimeterDefense: rating(base + (guard ? 8 : 1), index, 13),
-    interiorDefense: rating(base + (big ? 13 : -2), index, 14),
+    offensiveRebounding: rating(base + (big ? 12 : -3) + (identity === "rebounding" ? 7 : 0), index, 11),
+    defensiveRebounding: rating(base + (big ? 14 : 0) + (identity === "rebounding" ? 7 : 0), index, 12),
+    perimeterDefense: rating(base + (guard ? 8 : 1) + (identity === "defense" ? 6 : 0), index, 13),
+    interiorDefense: rating(base + (big ? 13 : -2) + (identity === "defense" ? 6 : 0), index, 14),
     steal: rating(base + (guard ? 7 : 0), index, 15),
     block: rating(base + (big ? 10 : -6), index, 16),
-    speed: rating(base + (guard ? 9 : -1), index, 17),
+    speed: rating(base + (guard ? 9 : -1) + (identity === "athleticism" ? 6 : 0), index, 17),
     strength,
-    athleticism,
+    athleticism: rating(athleticism + (identity === "athleticism" ? 5 : 0), index, 0),
     stamina: rating(base + 8, index, 18),
     basketballIQ: rating(base + (position === "PG" ? 8 : 2), index, 19),
     offensiveConsistency: rating(base + 2, index, 20),
     defensiveConsistency: rating(base + 2, index, 21),
-    potential: rating(base + (classYears[index % classYears.length] === "FR" ? 10 : 1), index, 22),
+    potential: rating(base + (classYear === "FR" ? 10 : classYear === "SO" ? 5 : 1) + program.potentialBonus, index, 22),
   };
-  const weighted = insideScoring * 0.11 + threePoint * 0.12 + passing * 0.09 + strength * 0.07 + athleticism * 0.08 +
+  const weighted = insideScoring * 0.11 + threePoint * 0.12 + passing * 0.09 + strength * 0.07 + ratings.athleticism * 0.08 +
     ratings.ballHandling * 0.08 + ratings.perimeterDefense * 0.1 + ratings.interiorDefense * 0.1 +
     ratings.defensiveRebounding * 0.06 + ratings.stamina * 0.05 + ratings.basketballIQ * 0.08 +
     ratings.offensiveConsistency * 0.03 + ratings.defensiveConsistency * 0.03;
@@ -103,7 +137,9 @@ function makeRatings(seed: number, index: number, position: Position, archetype:
 function makePlayer(teamIndex: number, playerIndex: number): PlayerProfile {
   const position = positions[playerIndex % positions.length];
   const archetype = archetypes[(teamIndex * 3 + playerIndex) % archetypes.length];
-  const classYear = classYears[(playerIndex + teamIndex) % classYears.length];
+  const program = programBlueprints[teamIndex];
+  const youthYears: ClassYear[] = ["FR", "SO", "FR", "SO", "JR", "FR", "SO", "JR", "SR", "FR", "SO", "JR", "SR"];
+  const classYear = program.profile.tier === "rebuilding" || program.profile.tier === "underdog" ? youthYears[(playerIndex + teamIndex) % youthYears.length] : classYears[(playerIndex + teamIndex) % classYears.length];
   const seed = teamIndex + 3;
   return {
     id: `p-${teamIndex + 1}-${playerIndex + 1}`,
@@ -115,7 +151,7 @@ function makePlayer(teamIndex: number, playerIndex: number): PlayerProfile {
     archetype,
     personality: personalities[(teamIndex + playerIndex) % personalities.length],
     hiddenTraits: [hiddenTraits[(teamIndex + playerIndex * 2) % hiddenTraits.length]],
-    ratings: makeRatings(seed, playerIndex, position, archetype),
+    ratings: makeRatings(seed, playerIndex, position, archetype, classYear, program),
   };
 }
 
@@ -143,6 +179,7 @@ export const teams: Team[] = teamSeeds.map(([name, city, shortName, nickname, pr
   conference: ["North", "North", "North", "North", "North", "South", "South", "South", "South", "South", "East", "East", "East", "East", "East", "West", "West", "West", "West", "West"][teamIndex],
   colors: [primary, secondary],
   logo: shortName.slice(0, 1),
+  program: programBlueprints[teamIndex].profile,
   coach: makeCoach(teamIndex),
   roster: Array.from({ length: 13 }, (_, playerIndex) => makePlayer(teamIndex, playerIndex)),
 }));

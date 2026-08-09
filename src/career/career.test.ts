@@ -5,7 +5,7 @@ import { defaultLineup, defaultStrategy, teams } from "../data/teams";
 import { advanceToNextUserGame, completeSeasonGame, getNextUserGame, simulateScheduledGame } from "../season/season";
 import { initializeGame, simulateGame, simulateOnePossession } from "../simulation/simulateGame";
 import { CAREER_SAVE_KEY, LocalStorageSaveRepository, deserializeCareer, serializeCareer } from "../season/persistence";
-import { acceptProgram, createCareer, settleCareerStage, startSeason, userControlsTeam } from "./career";
+import { acceptProgram, createCareer, objectiveMet, seasonObjective, settleCareerStage, startSeason, userCoachToGameCoach, userControlsTeam } from "./career";
 
 const coach: UserCoach = { id: "user-coach", firstName: "Dana", lastName: "Cole", age: 41, archetype: "Player Developer", offensivePhilosophy: "Motion", defensivePhilosophy: "Switching", appearance: { skin: 2, hairstyle: 3, hairColor: 1, facialHair: 0, expression: 2 } };
 
@@ -28,6 +28,32 @@ describe("career lifecycle", () => {
     expect(userControlsTeam(accepted, teams[3].id)).toBe(false);
     const started = startSeason(accepted, 102);
     expect(() => acceptProgram(started, teams[3].id, teams)).toThrow(/already assigned/);
+  });
+
+  it("derives persistent achievable objectives and gameplay defaults from program and coach identity", () => {
+    const elite = teams.find((team) => team.program.tier === "elite")!;
+    const rebuilding = teams.find((team) => team.program.tier === "rebuilding")!;
+    expect(seasonObjective(elite, 12)).toBe("Win the conference");
+    expect(seasonObjective(rebuilding, 12)).toBe("Win at least 4 games");
+    const accepted = acceptProgram(createCareer(coach, 10), rebuilding.id, teams, 123, 11);
+    expect(accepted.seasonObjective).toBe("Win at least 4 games");
+    expect(accepted.season?.userStrategy.offensiveStyle).toBe("motion");
+    expect(accepted.season?.userStrategy.defensiveScheme).toBe("switching");
+    expect(deserializeCareer(serializeCareer(accepted), teams).seasonObjective).toBe(accepted.seasonObjective);
+    const gameCoach = userCoachToGameCoach(coach);
+    expect(gameCoach.ratings.development).toBeGreaterThan(70);
+    expect(gameCoach.ratings.adaptability).toBeGreaterThan(70);
+    expect(objectiveMet({ ...accepted, season: { ...accepted.season!, records: { ...accepted.season!.records, [rebuilding.id]: { ...accepted.season!.records[rebuilding.id], wins: 4, losses: 8 } } } })).toBe(true);
+  });
+
+  it("ships explicit varied program identities and materially separated roster strength", () => {
+    expect(new Set(teams.map((team) => team.program.tier))).toEqual(new Set(["elite", "strong", "middle", "rebuilding", "underdog"]));
+    expect(teams.every((team) => team.program.prestige >= 1 && team.program.prestige <= 5 && team.program.facilities >= 1 && team.program.homeCourtStrength >= 1)).toBe(true);
+    const rotationOverall = (team: typeof teams[number]) => [...team.roster].sort((a, b) => b.ratings.overall - a.ratings.overall).slice(0, 8).reduce((sum, player) => sum + player.ratings.overall, 0) / 8;
+    const eliteAverage = teams.filter((team) => team.program.tier === "elite").reduce((sum, team) => sum + rotationOverall(team), 0) / teams.filter((team) => team.program.tier === "elite").length;
+    const underdogAverage = teams.filter((team) => team.program.tier === "underdog").reduce((sum, team) => sum + rotationOverall(team), 0) / teams.filter((team) => team.program.tier === "underdog").length;
+    expect(eliteAverage - underdogAverage).toBeGreaterThan(8);
+    expect(new Set(teams.map((team) => team.program.identity)).size).toBeGreaterThanOrEqual(5);
   });
 
   it("serializes mutable career data without copying the static team database", () => {
