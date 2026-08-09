@@ -337,6 +337,32 @@ export interface GameState {
 }
 
 export type ScheduledGameStatus = "scheduled" | "completed";
+export type SeasonPhase = "preseason" | "regular-season" | "conference-tournament" | "national-postseason" | "complete";
+export type GameType = "regular-season" | "conference-tournament" | "national-postseason";
+
+export interface GameRankingSnapshot {
+  homeRank?: number;
+  awayRank?: number;
+}
+
+export interface PostgameAnalysisItem {
+  category: "rebounding" | "shooting" | "turnovers" | "bench" | "usage" | "pace";
+  text: string;
+  advantageTeamId?: string;
+}
+
+export interface GameHistorySnapshot {
+  gameType: GameType;
+  week: number;
+  rankings: GameRankingSnapshot;
+  highScorerId?: string;
+  highRebounderId?: string;
+  highAssisterId?: string;
+  largestLead: number;
+  overtimeCount: number;
+  importantEventIds: number[];
+  analysis: PostgameAnalysisItem[];
+}
 
 export interface ScheduledGame {
   id: string;
@@ -345,10 +371,72 @@ export interface ScheduledGame {
   homeTeamId: string;
   awayTeamId: string;
   conferenceGame: boolean;
+  gameType: GameType;
+  round?: "play-in" | "semifinal" | "final" | "quarterfinal" | "championship";
   neutralSite?: boolean;
   seed: number;
   status: ScheduledGameStatus;
   result?: GameResult;
+  historySnapshot?: GameHistorySnapshot;
+}
+
+export interface NationalRanking {
+  rank: number;
+  previousRank: number;
+  teamId: string;
+  score: number;
+  strengthOfSchedule: number;
+  qualityWins: number;
+  roadWins: number;
+  recentWins: number;
+  reasons: string[];
+}
+
+export interface ConferenceTournamentState {
+  conference: string;
+  seeds: string[];
+  gameIds: string[];
+  championId?: string;
+}
+
+export interface NationalTournamentState {
+  seeds: string[];
+  gameIds: string[];
+  championId?: string;
+  runnerUpId?: string;
+}
+
+export interface PostseasonState {
+  conferenceGenerated: boolean;
+  conferences: ConferenceTournamentState[];
+  nationalGenerated: boolean;
+  national?: NationalTournamentState;
+}
+
+export interface PlayerSeasonRecord {
+  playerId: string;
+  value: number;
+  gameId: string;
+}
+
+export interface TeamSeasonRecordBookEntry {
+  teamId: string;
+  value: number;
+  gameId?: string;
+}
+
+export interface SeasonRecordBook {
+  players: Record<"points" | "rebounds" | "assists" | "threes" | "blocks" | "steals", PlayerSeasonRecord | undefined>;
+  teamRecords: Record<"highestScore" | "lowestAllowed" | "largestWin" | "largestLoss" | "longestWinStreak" | "longestLosingStreak" | "bestRankedWin", TeamSeasonRecordBookEntry | undefined>;
+}
+
+export interface SeasonAwards {
+  playerOfYearId: string;
+  defensivePlayerOfYearId: string;
+  freshmanOfYearId: string;
+  coachOfYearTeamId: string;
+  firstTeamAllNational: string[];
+  secondTeamAllNational: string[];
 }
 
 export interface TeamSeasonRecord {
@@ -393,6 +481,7 @@ export interface SeasonState {
   seed: number;
   currentDay: number;
   totalDays: number;
+  phase: SeasonPhase;
   userTeamId: string;
   userLineup: string[];
   userStrategy: Strategy;
@@ -401,6 +490,39 @@ export interface SeasonState {
   records: Record<string, TeamSeasonRecord>;
   playerStats: Record<string, SeasonPlayerStats>;
   history: string[];
+  rankings: NationalRanking[];
+  finalConferenceStandings?: Record<string, string[]>;
+  postseason: PostseasonState;
+  awards?: SeasonAwards;
+  recordBook: SeasonRecordBook;
+}
+
+export interface PlayerLeaderboardEntry {
+  playerId: string;
+  teamId: string;
+  value: number;
+}
+
+export type PlayerLeaderboardCategory = "ppg" | "rpg" | "apg" | "spg" | "bpg" | "fgPct" | "threePct" | "ftPct" | "points" | "rebounds" | "threePm";
+export type TeamLeaderboardCategory = "ppg" | "defense" | "threePct" | "rebounding" | "turnoverRate" | "pointDifferential";
+
+export interface TeamLeaderboardEntry {
+  teamId: string;
+  value: number;
+}
+
+export interface CoachSeasonEvaluation {
+  grade: "A+" | "A" | "B" | "C" | "D" | "F";
+  explanation: string;
+}
+
+export interface ScoutingReport {
+  expectedStarterIds: string[];
+  rotationIds: string[];
+  keyPlayers: { scorerId: string; creatorId: string; shooterId: string; rebounderId: string; defenderId: string };
+  tendencies: string[];
+  recentTrends: string[];
+  conclusions: string[];
 }
 
 export type UserCoachArchetype = "Balanced" | "Offensive Mind" | "Defensive Specialist" | "Player Developer" | "Analytics Coach" | "Motivator" | "Fast-Paced Coach";
@@ -436,6 +558,7 @@ export interface CareerSave {
   programId?: string;
   seasonObjective?: string;
   season?: SeasonState;
+  coachEvaluation?: CoachSeasonEvaluation;
   liveGame?: {
     gameId: string;
     state: GameState;

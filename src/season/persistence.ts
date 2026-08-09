@@ -1,4 +1,6 @@
 import type { BoxScore, CareerSave, GameResult, GameRuntimeTeam, GameState, ScheduledGame, SeasonState, Team } from "../domain/types";
+import { emptyRecordBook } from "./insights";
+import { calculateRankings } from "./rankings";
 
 const LEGACY_SAVE_KEY = "courtside-season-v1";
 export const CAREER_SAVE_KEY = "courtside-career-v2";
@@ -75,11 +77,17 @@ export function deserializeCareer(raw: string, database: Team[]): CareerSave {
   const stages = ["program-selection", "season-introduction", "season", "season-complete"];
   if (payload.schemaVersion !== 2 || !payload.careerId || !payload.coach || !payload.stage || !stages.includes(payload.stage)) throw new Error("Save is incompatible or incomplete.");
   if (payload.programId) teamById(database, payload.programId);
-  const season = payload.season ? {
+  const savedRecordBook = payload.season?.recordBook;
+  let season = payload.season ? {
     ...payload.season,
     teams: database,
-    schedule: payload.season.schedule.map((game) => ({ ...game, result: game.result ? loadResult(game.result, database) : undefined })),
+    phase: payload.season.phase ?? (payload.stage === "season-complete" ? "complete" : "regular-season"),
+    schedule: payload.season.schedule.map((game) => ({ ...game, gameType: game.gameType ?? "regular-season", result: game.result ? loadResult(game.result, database) : undefined })),
+    rankings: payload.season.rankings ?? [],
+    postseason: payload.season.postseason ?? { conferenceGenerated: false, conferences: [], nationalGenerated: false },
+    recordBook: savedRecordBook && "teamRecords" in savedRecordBook ? savedRecordBook : emptyRecordBook(),
   } as SeasonState : undefined;
+  if (season && !season.rankings.length) season = { ...season, rankings: calculateRankings(season, []) };
   if (season && (!Array.isArray(season.schedule) || !season.records || !season.playerStats || season.userTeamId !== payload.programId)) throw new Error("Save season data is invalid.");
   const liveGame = payload.liveGame ? { gameId: payload.liveGame.gameId, state: { ...payload.liveGame.state, neutralSite: payload.liveGame.state.neutralSite ?? false, openingPossessionTeamId: payload.liveGame.state.openingPossessionTeamId ?? payload.liveGame.state.possessionTeamId, home: loadRuntime(payload.liveGame.state.home, database), away: loadRuntime(payload.liveGame.state.away, database) } } : undefined;
   if (payload.stage !== "program-selection" && (!payload.programId || !season)) throw new Error("Career is missing its selected program or season.");

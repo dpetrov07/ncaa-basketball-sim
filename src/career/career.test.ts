@@ -121,11 +121,16 @@ describe("career lifecycle", () => {
   it("can complete the full generated season and enter end-of-season state", () => {
     let career = startSeason(acceptProgram(createCareer(coach, 500), teams[1].id, teams, 111, 501), 502);
     let season = career.season!;
-    for (const game of season.schedule) season = simulateScheduledGame(season, game.id);
+    for (let guard = 0; guard < 500 && season.phase !== "complete"; guard += 1) {
+      const game = season.schedule.find((candidate) => candidate.status === "scheduled");
+      if (!game) break;
+      season = simulateScheduledGame(season, game.id);
+    }
     career = settleCareerStage({ ...career, season }, 503);
     expect(career.stage).toBe("season-complete");
+    expect(career.coachEvaluation?.grade).toMatch(/^(A\+|A|B|C|D|F)$/);
     expect(career.season?.schedule.every((game) => game.status === "completed")).toBe(true);
     expect(getNextUserGame(career.season!)).toBeUndefined();
     expect(serializeCareer(career).length).toBeLessThan(4_000_000);
-  });
+  }, 15_000);
 });

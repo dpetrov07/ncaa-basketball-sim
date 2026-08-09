@@ -45,6 +45,7 @@ function App() {
   const opponentId = team && nextUserGame ? (nextUserGame.homeTeamId === team.id ? nextUserGame.awayTeamId : nextUserGame.homeTeamId) : undefined;
   const opponent = teams.find((candidate) => candidate.id === opponentId);
   const lastResult = team && season ? [...season.schedule].reverse().find((game) => game.status === "completed" && game.result && (game.homeTeamId === team.id || game.awayTeamId === team.id))?.result : undefined;
+  const boxGame = season && boxResult ? season.schedule.find((game) => game.result?.seed === boxResult.seed && game.homeTeamId === boxResult.home.team.id && game.awayTeamId === boxResult.away.team.id) : undefined;
 
   function store(next: CareerSave) {
     const updated = { ...next, updatedAt: Date.now() };
@@ -122,10 +123,10 @@ function App() {
   function prepareForGame() {
     if (!career || !season) return;
     if (career.liveGame?.state.status === "playing") { setView("live"); return; }
-    if (!nextUserGame) { setView("end-season"); return; }
     const preparedSeason = advanceToNextUserGame(season);
-    store({ ...career, season: preparedSeason, liveGame: undefined });
-    setError(null); setView("pregame");
+    const settled = settleCareerStage({ ...career, season: preparedSeason, liveGame: undefined });
+    store(settled);
+    setError(null); setView(settled.stage === "season-complete" ? "end-season" : getNextUserGame(preparedSeason) ? "pregame" : "season");
   }
 
   function tipOff() {
@@ -185,9 +186,9 @@ function App() {
     {view === "lineup" && <LineupScreen team={team} lineup={season.userLineup} strategy={season.userStrategy} onToggle={toggleStarter} onReset={resetLineup} onPregame={prepareForGame} />}
     {view === "gameplan" && <GamePlanScreen team={team} strategy={season.userStrategy} onUpdate={updateStrategy} onPregame={prepareForGame} />}
     {view === "more" && <MoreScreen team={team} coach={career.coach} onLineup={() => setView("lineup")} onHistory={() => setView("history")} onStats={() => setView("stats")} onMainMenu={() => setView("start")} />}
-    {view === "pregame" && opponent && nextUserGame && <PregameScreen team={team} opponent={opponent} lineup={season.userLineup} strategy={season.userStrategy} game={nextUserGame} teamRecord={season.records[team.id]} opponentRecord={season.records[opponent.id]} error={error} onBack={() => setView("home")} onSimulate={tipOff} />}
+    {view === "pregame" && opponent && nextUserGame && <PregameScreen team={team} opponent={opponent} lineup={season.userLineup} strategy={season.userStrategy} game={nextUserGame} season={season} teamRecord={season.records[team.id]} opponentRecord={season.records[opponent.id]} error={error} onBack={() => setView("home")} onSimulate={tipOff} />}
     {view === "live" && career.liveGame && <LiveGameScreen state={career.liveGame.state} userTeamId={team.id} game={season.schedule.find((scheduled) => scheduled.id === career.liveGame?.gameId)} onStateChange={updateRunningGame} onBoxScore={openBoxScore} />}
-    {view === "boxscore" && boxResult && <BoxScoreScreen result={boxResult} onBack={finishBoxScore} backLabel={career.stage === "season-complete" ? "View season summary" : "Return to Program Home"} />}
+    {view === "boxscore" && boxResult && <BoxScoreScreen result={boxResult} analysis={boxGame?.historySnapshot?.analysis} onBack={finishBoxScore} backLabel={career.stage === "season-complete" ? "View season summary" : "Return to Program Home"} />}
     {view === "end-season" && <EndSeasonScreen career={career} team={team} onViewSeason={() => setView("history")} onViewStats={() => setView("stats")} onMainMenu={() => setView("start")} />}
     {view === "history" && <SeasonHistoryScreen state={season} team={team} onBack={() => setView(career.stage === "season-complete" ? "end-season" : "season")} />}
     {view === "stats" && <SeasonStatsScreen state={season} team={team} onBack={() => setView(career.stage === "season-complete" ? "end-season" : "season")} />}

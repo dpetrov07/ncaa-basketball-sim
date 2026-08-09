@@ -1,5 +1,5 @@
-import type { CareerSave, Coach, SeasonPlayerStats, SeasonState, Strategy, Team, UserCoach } from "../domain/types";
-import { createSeasonState, getNextUserGame, getStandings, simulateScheduledGame } from "../season/season";
+import type { CareerSave, Coach, CoachSeasonEvaluation, SeasonPlayerStats, SeasonState, Strategy, Team, UserCoach } from "../domain/types";
+import { advanceToNextUserGame, createSeasonState, getNextUserGame, getStandings } from "../season/season";
 
 export interface TeamOverview {
   overall: number;
@@ -90,24 +90,37 @@ export function acceptProgram(save: CareerSave, programId: string, teams: Team[]
 
 export function startSeason(save: CareerSave, now = Date.now()): CareerSave {
   if (!save.programId || !save.season) throw new Error("Accept a coaching job before starting the season.");
-  return { ...save, stage: "season", updatedAt: now };
+  return { ...save, stage: "season", season: { ...save.season, phase: "regular-season" }, updatedAt: now };
 }
 
 export function userControlsTeam(save: CareerSave, teamId: string): boolean { return save.programId === teamId; }
 
 export function finishRemainingAiGames(state: SeasonState): SeasonState {
   let next = state;
-  for (const game of state.schedule.filter((candidate) => candidate.status === "scheduled")) {
-    if (game.homeTeamId === state.userTeamId || game.awayTeamId === state.userTeamId) continue;
-    next = simulateScheduledGame(next, game.id);
+  for (let guard = 0; guard < 500 && next.phase !== "complete"; guard += 1) {
+    const userGame = getNextUserGame(next);
+    if (userGame) break;
+    const advanced = advanceToNextUserGame(next);
+    if (advanced.phase === next.phase && advanced.history.length === next.history.length) break;
+    next = advanced;
   }
-  return { ...next, currentDay: next.totalDays };
+  return next;
 }
 
 export function settleCareerStage(save: CareerSave, now = Date.now()): CareerSave {
-  if (!save.season || getNextUserGame(save.season)) return { ...save, updatedAt: now };
-  const season = finishRemainingAiGames(save.season);
-  return { ...save, stage: "season-complete", season, liveGame: undefined, updatedAt: now };
+  if (!save.season) return { ...save, updatedAt: now };
+  const season = getNextUserGame(save.season) ? save.season : finishRemainingAiGames(save.season);
+  if (season.phase !== "complete") return { ...save, season, updatedAt: now };
+  const evaluated = { ...save, season };
+  return { ...evaluated, stage: "season-complete", coachEvaluation: evaluateCoachSeason(evaluated), liveGame: undefined, updatedAt: now };
+}
+
+export function evaluateCoachSeason(save: CareerSave): CoachSeasonEvaluation {
+  if (!save.season || !save.programId) return { grade: "F", explanation: "The season was not completed." };
+  const season = save.season; const team = season.teams.find((candidate) => candidate.id === save.programId)!; const record = season.records[save.programId]; const winPct = record.wins / Math.max(1, record.wins + record.losses); const met = objectiveMet(save); const rank = season.rankings.find((entry) => entry.teamId === save.programId)?.rank ?? 20; const conferenceChampion = season.postseason.conferences.some((bracket) => bracket.championId === save.programId); const national = season.postseason.national; const nationalChampion = national?.championId === save.programId; const nationalRunnerUp = national?.runnerUpId === save.programId; const expected = { elite: .7, strong: .6, middle: .5, rebuilding: .38, underdog: .3 }[team.program.tier]; let score = 2 + (winPct - expected) * 6 + (met ? 1 : -1) + (rank <= 5 ? .7 : rank <= 10 ? .3 : 0) + (conferenceChampion ? 1 : 0) + (nationalRunnerUp ? 1 : 0) + (nationalChampion ? 2 : 0); score = Math.max(0, Math.min(6, score));
+  const grade: CoachSeasonEvaluation["grade"] = score >= 5.4 ? "A+" : score >= 4.6 ? "A" : score >= 3.6 ? "B" : score >= 2.6 ? "C" : score >= 1.5 ? "D" : "F";
+  const explanation = nationalChampion ? "Exceeded every expectation with a national championship." : nationalRunnerUp ? "A deep national tournament run elevated the season." : conferenceChampion ? "Exceeded expectations with a conference tournament title." : met && winPct >= expected ? "Met the season objective and performed at or above the program standard." : met ? "Met the stated objective, though results against the broader schedule were uneven." : winPct >= expected ? "Competitive overall results fell short of the stated season objective." : "Finished below the program's expected competitive level.";
+  return { grade, explanation };
 }
 
 export function seasonLeaders(state: SeasonState, teamId?: string) {
@@ -124,7 +137,9 @@ export function seasonLeaders(state: SeasonState, teamId?: string) {
 export function objectiveMet(save: CareerSave): boolean {
   if (!save.season || !save.programId) return false;
   const record = save.season.records[save.programId];
-  const standing = getStandings(save.season, save.season.teams.find((team) => team.id === save.programId)?.conference).findIndex((entry) => entry.teamId === save.programId) + 1;
+  const conference = save.season.teams.find((team) => team.id === save.programId)?.conference;
+  const frozenStanding = conference ? save.season.finalConferenceStandings?.[conference]?.indexOf(save.programId) : undefined;
+  const standing = frozenStanding !== undefined && frozenStanding >= 0 ? frozenStanding + 1 : getStandings(save.season, conference).findIndex((entry) => entry.teamId === save.programId) + 1;
   const objective = save.seasonObjective ?? "";
   if (objective === "Win the conference") return standing === 1;
   if (objective === "Finish in the top 3 of the conference") return standing <= 3;
